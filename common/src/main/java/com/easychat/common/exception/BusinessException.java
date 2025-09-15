@@ -55,8 +55,8 @@ public class BusinessException extends RuntimeException {
      * 重写fillInStackTrace 业务异常不需要堆栈信息，提高效率.
      */
     @Override
-    public Throwable fillInStackTrace() {
-        return this;
+    public synchronized Throwable fillInStackTrace() {
+        return super.fillInStackTrace();
     }
 
 }
