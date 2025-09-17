@@ -4,11 +4,10 @@ import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.dto.SysSettingDTO;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.exception.BusinessException;
-import com.easychat.common.utils.CopyTools;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.RedisUtils;
 
-import com.easychat.user.userservice.constants.Constants;
+import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;

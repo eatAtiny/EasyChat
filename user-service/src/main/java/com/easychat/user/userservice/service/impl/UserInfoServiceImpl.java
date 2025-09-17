@@ -9,7 +9,7 @@ import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.entity.dto.TokenUserInfoDTO;
 import com.easychat.user.userservice.config.UserServiceConfig;
-import com.easychat.user.userservice.constants.Constants;
+import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.po.UserInfoBeauty;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
@@ -22,7 +22,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.Objects;
 
 @Service

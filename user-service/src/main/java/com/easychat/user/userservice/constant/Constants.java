@@ -1,6 +1,4 @@
-package com.easychat.user.userservice.constants;
-
-import org.redisson.api.RedissonClient;
+package com.easychat.user.userservice.constant;
 
 public class Constants {
     // token
