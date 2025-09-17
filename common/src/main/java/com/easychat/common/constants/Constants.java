@@ -99,4 +99,8 @@ public class Constants {
     //被管理员踢群
     public static final String out_group_TEMPLATE = "%s被管理员移出了群聊";
 
+    // 传递给下服务的信息
+    public static final String USER_ID = "user_id"; // 用户id
+    public static final String USER_NICK_NAME = "nick_name";  // 昵称
+
 }
