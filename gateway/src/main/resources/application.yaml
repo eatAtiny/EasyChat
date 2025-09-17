@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+easychat:
+  auth:
+    excludePaths:
+      - /api/account/login
+      - /api/account/checkCode
+      - /api/account/register
+      - /hi
+    includePaths:
+    adminPaths:
+      - /admin/**
