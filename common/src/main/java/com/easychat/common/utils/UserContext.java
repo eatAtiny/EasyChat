@@ -1,14 +1,15 @@
 package com.easychat.common.utils;
 
 public class UserContext {
-    private static final ThreadLocal<String> tl = new ThreadLocal<>();
+    private static final ThreadLocal<String> userIdHolder = new ThreadLocal<>();
+    private static final ThreadLocal<String> nickNameHolder = new ThreadLocal<>();
 
     /**
      * 保存当前登录用户信息到ThreadLocal
      * @param userId 用户id
      */
     public static void setUser(String userId) {
-        tl.set(userId);
+        userIdHolder.set(userId);
     }
 
     /**
@@ -16,14 +17,14 @@ public class UserContext {
      * @return 用户id
      */
     public static String getUser() {
-        return tl.get();
+        return userIdHolder.get();
     }
 
     /**
      * 移除当前登录用户信息
      */
     public static void removeUser(){
-        tl.remove();
+        userIdHolder.remove();
     }
 
     /**
@@ -31,7 +32,7 @@ public class UserContext {
      * @param nickName 昵称
      */
     public static void setNickName(String nickName) {
-        tl.set(nickName);
+        nickNameHolder.set(nickName);
     }
 
     /**
@@ -39,13 +40,13 @@ public class UserContext {
      * @return 昵称
      */
     public static String getNickName() {
-        return tl.get();
+        return nickNameHolder.get();
     }
 
     /**
      * 移除当前登录用户昵称
      */
     public static void removeNickName() {
-        tl.remove();
+        nickNameHolder.remove();
     }
 }
