@@ -18,6 +18,9 @@
     <!-- 模块 -->
     <modules>
         <module>common</module>
+        <module>gateway</module>
+        <module>user-service</module>
+        <module>contact-service</module>
     </modules>
     <!-- 版本属性管理 -->
     <properties>
@@ -111,6 +114,12 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
+            </dependency>
+            <!--nacos 服务注册发现-->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

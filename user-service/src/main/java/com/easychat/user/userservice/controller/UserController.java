@@ -9,6 +9,7 @@ import com.easychat.common.utils.RedisUtils;
 
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
+import com.easychat.user.userservice.entity.po.UserInfo;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
 import com.easychat.user.userservice.service.UserInfoService;
@@ -88,5 +89,10 @@ public class UserController extends BaseController {
         SysSettingVO sysSettingVO = new SysSettingVO();
         BeanUtils.copyProperties(sysSettingDTO, sysSettingVO);
         return getSuccessResponseVO(sysSettingVO);
+    }
+
+    @GetMapping("/search")
+    public UserInfo search(@RequestParam("contactId") String contactId) {
+        return userInfoService.getById(contactId);
     }
 }
