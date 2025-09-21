@@ -35,7 +35,7 @@ public class UserContactApply implements Serializable {
     private String receiveUserId;
 
     /**
-     * 状态0:待处理 1:已同意  2:已拒绝 3:已拉黑
+     * 联系人类型 0:用户 1:群聊
      */
     private Integer contactType;
 

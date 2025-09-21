@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easychat.contact.mapper.UserContactMapper">
+    <select id="getContactList" resultType="com.easychat.contact.entity.po.UserContact">
+        select uc.*,
+               case
+                   when uc.contact_type = 0 then ui.nick_name
+                   when uc.contact_type = 1 then gi.group_name
+                   end as contact_name,
+               case
+                   when uc.contact_type = 0 then ui.sex
+                   when uc.contact_type = 1 then null
+                   end as sex
+        from user_contact uc
+                 left join user_info ui on uc.contact_type = 0 and uc.contact_id = ui.user_id
+                 left join group_info gi on uc.contact_type = 1 and uc.contact_id = gi.group_id
+        where uc.user_id = #{userId} and uc.contact_type = #{contactType}
+    </select>
+</mapper>

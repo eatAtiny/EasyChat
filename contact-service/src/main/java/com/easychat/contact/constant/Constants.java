@@ -20,13 +20,9 @@ public class Constants {
     public static final String CONTACT_APPLY_INFO_ERROR = "申请信息错误";
     public static final String CONTACT_USER_STATUS_BLOCKED = "对方已将你拉黑";
     public static final String GROUP_FULL = "群聊已满";
+    public static final String APPLY_NOT_EXIST = "申请不存在";
+    public static final String ERROR_OPERATION = "违法操作";
 
-    // 群聊/联系人信息
-    public static final Character CONTACT_TYPE_GROUP_OPEN = 'G';  // 群聊
-    public static final Integer CONTACT_TYPE_GROUP = 1;  // 群聊
-    public static final String CONTACT_TYPE_GROUP_NAME = "GROUP";
-    public static final Integer CONTACT_TYPE_USER = 0;  // 个人
-    public static final String CONTACT_TYPE_USER_NAME = "USER";
     // 群聊状态
     public static final Integer GROUP_STATUS_DISSOLUTION = 0;  // 解散
 

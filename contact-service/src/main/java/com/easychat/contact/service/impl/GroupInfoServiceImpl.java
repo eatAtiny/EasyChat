@@ -9,6 +9,7 @@ import com.easychat.common.utils.UserContext;
 import com.easychat.contact.constant.Constants;
 import com.easychat.contact.entity.dto.GroupInfoDTO;
 import com.easychat.contact.entity.dto.ManageGroupDTO;
+import com.easychat.contact.entity.enums.ContactTypeEnum;
 import com.easychat.contact.entity.po.GroupInfo;
 import com.easychat.contact.entity.po.UserContact;
 import com.easychat.contact.mapper.GroupInfoMapper;
@@ -50,7 +51,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             UserContact userContact = new UserContact();
             userContact.setUserId(groupInfoDTO.getGroupOwnerId());
             userContact.setContactId(groupInfo.getGroupId());
-            userContact.setContactType(Constants.CONTACT_TYPE_GROUP);
+            userContact.setContactType(ContactTypeEnum.GROUP.getStatus());
             userContact.setCreateTime(DateTime.now());
             userContact.setLastUpdateTime(DateTime.now());
 //            userContact.setStatus(UserContact.STATUS_FRIEND);
@@ -112,7 +113,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
                 new QueryWrapper<UserContact>()
                         .eq("user_id", UserContext.getUser())
                         .eq("contact_id", groupId)
-                        .eq("contact_type", Constants.CONTACT_TYPE_GROUP)
+                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
         );
         if (userContact == null) {
             throw new BusinessException(Constants.USER_NOT_IN_GROUP);
@@ -126,7 +127,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         groupInfo.setMemberCount(userContactMapper.selectCount(
                 new QueryWrapper<UserContact>()
                         .eq("contact_id", groupId)
-                        .eq("contact_type", Constants.CONTACT_TYPE_GROUP)
+                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
         ));
         return groupInfo;
     }
@@ -171,7 +172,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         // 1. 判断群聊是否存在
         GroupInfo groupInfo = baseMapper.selectById(manageGroupDTO.getGroupId());
         if (groupInfo == null) {
-            throw new BusinessException(Constants.GROUP_NOT_EXIST);
+            return ;
         }
         // 2. 判断用户是否为群聊群主
         if (StringUtils.equals(groupInfo.getGroupOwnerId(), manageGroupDTO.getContactIds())) {
@@ -182,7 +183,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
                 new QueryWrapper<UserContact>()
                         .eq("user_id", manageGroupDTO.getContactIds())
                         .eq("contact_id", groupInfo.getGroupId())
-                        .eq("contact_type", Constants.CONTACT_TYPE_GROUP)
+                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
         );
         // 4. TODO 通知成员退出
         // 5. TODO 更新会话消息

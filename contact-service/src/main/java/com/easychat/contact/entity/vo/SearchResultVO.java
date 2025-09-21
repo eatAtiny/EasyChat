@@ -10,6 +10,7 @@ public class SearchResultVO {
     private String contactId;
     /**
      * 群组/用户类型
+     * USER:用户 GROUP:群组
      */
     private String contactType;
     /**

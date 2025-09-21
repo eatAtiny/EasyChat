@@ -47,6 +47,7 @@ public class GroupController extends BaseController {
         List<GroupInfo> groupInfoList = groupInfoService.list(
                 new QueryWrapper<GroupInfo>()
                         .eq("group_owner_id", userId)
+                        .eq("status", 1)
         );
         return getSuccessResponseVO(groupInfoList);
     }
