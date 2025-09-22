@@ -15,7 +15,7 @@ import java.util.Date;
  * 联系人
  */
 @Data
-public class UserContact implements Serializable {
+public class Contact implements Serializable {
 
 
     /**

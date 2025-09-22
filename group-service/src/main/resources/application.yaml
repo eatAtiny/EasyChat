@@ -1,8 +1,8 @@
 spring:
   application:
-    name: user-service
+    name: group-service
   datasource:
-    url: jdbc:mysql://172.23.80.100:3306/user?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://172.23.80.100:3306/group?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 123456
@@ -33,9 +33,9 @@ mybatis-plus:
       logic-not-delete-value: 0   # 逻辑未删除值
   # mapper.xml文件位置
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.easychat.user.userservice.entity
+  type-aliases-package: com.easychat.group.entity
 
 user-service:
   admin-emails: admin666@qq.com
 server:
-  port: 8081
+  port: 8083

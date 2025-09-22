@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.easychat.contact.mapper.UserContactMapper">
-    <select id="getContactList" resultType="com.easychat.contact.entity.po.UserContact">
+<mapper namespace="com.easychat.contact.mapper.ContactMapper">
+    <select id="getContactList" resultType="com.easychat.contact.entity.po.Contact">
         select uc.*,
                case
                    when uc.contact_type = 0 then ui.nick_name

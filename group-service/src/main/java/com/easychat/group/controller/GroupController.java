@@ -1,13 +1,13 @@
-package com.easychat.contact.controller;
+package com.easychat.group.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.utils.UserContext;
-import com.easychat.contact.entity.dto.GroupInfoDTO;
-import com.easychat.contact.entity.dto.ManageGroupDTO;
-import com.easychat.contact.entity.po.GroupInfo;
-import com.easychat.contact.service.GroupInfoService;
+import com.easychat.group.entity.dto.GroupInfoDTO;
+import com.easychat.group.entity.dto.GroupManageDTO;
+import com.easychat.group.entity.po.GroupInfo;
+import com.easychat.group.service.GroupInfoService;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,8 +67,8 @@ public class GroupController extends BaseController {
      * 管理群员
      */
     @PostMapping("/addOrRemoveGroupUser")
-    public ResponseVO manageGroupUser(@ModelAttribute ManageGroupDTO manageGroupDTO) {
-        groupInfoService.manageGroupUser(manageGroupDTO);
+    public ResponseVO manageGroupUser(@ModelAttribute GroupManageDTO groupManageDTO) {
+        groupInfoService.manageGroupUser(groupManageDTO);
         return getSuccessResponseVO("操作成功");
     }
 
@@ -79,10 +79,10 @@ public class GroupController extends BaseController {
      */
     @PostMapping("/leaveGroup")
     public ResponseVO leaveGroup(@NotNull @RequestParam("groupId") String groupId) {
-        ManageGroupDTO manageGroupDTO = new ManageGroupDTO();
-        manageGroupDTO.setGroupId(groupId);
-        manageGroupDTO.setContactIds(UserContext.getUser());
-        groupInfoService.leaveGroup(manageGroupDTO);
+        GroupManageDTO groupManageDTO = new GroupManageDTO();
+        groupManageDTO.setGroupId(groupId);
+        groupManageDTO.setContactIds(UserContext.getUser());
+        groupInfoService.leaveGroup(groupManageDTO);
         return getSuccessResponseVO("退出成功");
     }
 

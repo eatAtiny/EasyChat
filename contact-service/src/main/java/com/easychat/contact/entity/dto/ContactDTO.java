@@ -1,8 +1,5 @@
 package com.easychat.contact.entity.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.easychat.common.entity.enums.DateTimePatternEnum;
-import com.easychat.common.utils.DateUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,7 +12,7 @@ import java.util.Date;
  * 联系人
  */
 @Data
-public class UserContactDTO implements Serializable {
+public class ContactDTO implements Serializable {
 
 
     /**

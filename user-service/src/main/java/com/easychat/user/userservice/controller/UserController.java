@@ -27,7 +27,7 @@ import java.util.UUID;
 
 @Api(tags = "用户相关接口")
 @RestController
-@RequestMapping("api/account")
+@RequestMapping("/user")
 public class UserController extends BaseController {
     @Autowired
     private RedisUtils redisUtils;
@@ -42,7 +42,7 @@ public class UserController extends BaseController {
      * 验证码
      */
     @ApiOperation("获取验证码")
-    @PostMapping(value = "/checkCode")
+    @GetMapping("/checkCode")
     public ResponseVO checkCode() {
         ArithmeticCaptcha captcha = new ArithmeticCaptcha(100, 42);
         String code = captcha.text();
@@ -55,8 +55,14 @@ public class UserController extends BaseController {
         return getSuccessResponseVO(result);
     }
 
+    /**
+     * 注册
+     * @param userInfoDTO 用户信息DTO
+     * @return
+     */
+
     @ApiOperation("注册")
-    @PostMapping(value = "/register", consumes = "multipart/form-data")
+    @PostMapping("/register")
     public ResponseVO register(@ModelAttribute UserInfoDTO userInfoDTO) {
         try {
             if (!userInfoDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey()))) {
@@ -69,8 +75,11 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * 登录接口
+     */
     @ApiOperation("登录接口")
-    @PostMapping(value = "/login", consumes = "multipart/form-data")
+    @PostMapping("")
     public ResponseVO login(@ModelAttribute UserInfoDTO userInfoDTO) {
         try {
             if (!userInfoDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey()))) {
@@ -83,7 +92,11 @@ public class UserController extends BaseController {
         }
     }
 
-    @PostMapping(value = "/getSysSetting")
+    /**
+     * 获取系统设置
+     * @return
+     */
+    @GetMapping("/setting")
     public ResponseVO getSysSetting() {
         SysSettingDTO sysSettingDTO = redisComponet.getSysSetting();
         SysSettingVO sysSettingVO = new SysSettingVO();

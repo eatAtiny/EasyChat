@@ -1,9 +1,9 @@
-package com.easychat.contact.service;
+package com.easychat.group.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.contact.entity.dto.GroupInfoDTO;
-import com.easychat.contact.entity.dto.ManageGroupDTO;
-import com.easychat.contact.entity.po.GroupInfo;
+import com.easychat.group.entity.dto.GroupInfoDTO;
+import com.easychat.group.entity.dto.GroupManageDTO;
+import com.easychat.group.entity.po.GroupInfo;
 
 public interface GroupInfoService extends IService<GroupInfo> {
 
@@ -25,13 +25,13 @@ public interface GroupInfoService extends IService<GroupInfo> {
      * 管理群员
      * @param manageGroupDTO 管理群聊DTO
      */
-    public void manageGroupUser(ManageGroupDTO manageGroupDTO);
+    public void manageGroupUser(GroupManageDTO manageGroupDTO);
 
     /**
      * 退出群聊
      * @param manageGroupDTO 退出群聊DTO
      */
-    public void leaveGroup(ManageGroupDTO manageGroupDTO);
+    public void leaveGroup(GroupManageDTO manageGroupDTO);
 
     /**
      * 解散群聊

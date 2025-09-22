@@ -15,7 +15,7 @@ import java.io.Serializable;
  */
 @Data
 @TableName("user_contact_apply")
-public class UserContactApply implements Serializable {
+public class ContactApply implements Serializable {
 
 
     /**

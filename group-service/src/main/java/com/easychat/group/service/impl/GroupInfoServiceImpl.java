@@ -1,26 +1,29 @@
-package com.easychat.contact.service.impl;
+package com.easychat.group.service.impl;
 
 import cn.hutool.core.date.DateTime;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+
 import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.utils.UserContext;
-import com.easychat.contact.constant.Constants;
-import com.easychat.contact.entity.dto.GroupInfoDTO;
-import com.easychat.contact.entity.dto.ManageGroupDTO;
-import com.easychat.contact.entity.enums.ContactTypeEnum;
-import com.easychat.contact.entity.po.GroupInfo;
-import com.easychat.contact.entity.po.UserContact;
-import com.easychat.contact.mapper.GroupInfoMapper;
-import com.easychat.contact.mapper.UserContactMapper;
-import com.easychat.contact.service.GroupInfoService;
+import com.easychat.group.api.ContactClient;
+import com.easychat.group.constant.Constants;
+import com.easychat.group.entity.dto.GroupInfoDTO;
+import com.easychat.group.entity.dto.GroupManageDTO;
+import com.easychat.group.entity.dto.ContactDTO;
+import com.easychat.group.entity.enums.ContactStatusEnum;
+import com.easychat.group.entity.po.GroupInfo;
+import com.easychat.group.mapper.GroupInfoMapper;
+import com.easychat.group.service.GroupInfoService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.info.JavaInfoContributor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 
@@ -28,7 +31,7 @@ import java.io.IOException;
 public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo> implements GroupInfoService {
 
     @Autowired
-    private UserContactMapper userContactMapper;
+    private ContactClient contactClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -48,19 +51,9 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             groupInfo.setStatus(Constants.GROUP_STATUS_NORMAL);
             baseMapper.insert(groupInfo);
             // 1.3 将自己加入群聊
-            UserContact userContact = new UserContact();
-            userContact.setUserId(groupInfoDTO.getGroupOwnerId());
-            userContact.setContactId(groupInfo.getGroupId());
-            userContact.setContactType(ContactTypeEnum.GROUP.getStatus());
-            userContact.setCreateTime(DateTime.now());
-            userContact.setLastUpdateTime(DateTime.now());
-//            userContact.setStatus(UserContact.STATUS_FRIEND);
-            userContact.setContactName(groupInfoDTO.getGroupName());
-            userContactMapper.insert(userContact);
+            manageGroupContact(groupInfoDTO.getGroupOwnerId(), groupInfoDTO.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
             // 1.4 TODO 创建会话
             // 1.5 TODO 创建消息
-
-
 
         }else// 2. 群号不为空 修改群聊信息
         {
@@ -76,7 +69,6 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             // 2.3 更新群聊信息
             BeanUtils.copyProperties(groupInfoDTO, groupInfo);
             baseMapper.updateById(groupInfo);
-
             // 2.4 TODO 更新会话
 
         }
@@ -107,33 +99,33 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
 
     @Override
     public GroupInfo loadGroupDetail(String groupId) {
-        // 1. 判断用户是否在群聊中
-        System.out.println(UserContext.getUser());
-        UserContact userContact = userContactMapper.selectOne(
-                new QueryWrapper<UserContact>()
-                        .eq("user_id", UserContext.getUser())
-                        .eq("contact_id", groupId)
-                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
-        );
-        if (userContact == null) {
-            throw new BusinessException(Constants.USER_NOT_IN_GROUP);
-        }
+//        // 1. 判断用户是否在群聊中
+//        System.out.println(UserContext.getUser());
+//        UserContact userContact = userContactMapper.selectOne(
+//                new QueryWrapper<UserContact>()
+//                        .eq("user_id", UserContext.getUser())
+//                        .eq("contact_id", groupId)
+//                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
+//        );
+//        if (userContact == null) {
+//            throw new BusinessException(Constants.USER_NOT_IN_GROUP);
+//        }
         // 2. 查询群聊信息
         GroupInfo groupInfo = baseMapper.selectById(groupId);
         if (groupInfo == null) {
             throw new BusinessException(Constants.GROUP_NOT_EXIST);
         }
-        // 3. 加载群聊成员数量
-        groupInfo.setMemberCount(userContactMapper.selectCount(
-                new QueryWrapper<UserContact>()
-                        .eq("contact_id", groupId)
-                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
-        ));
+//        // 3. 加载群聊成员数量
+//        groupInfo.setMemberCount(userContactMapper.selectCount(
+//                new QueryWrapper<UserContact>()
+//                        .eq("contact_id", groupId)
+//                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
+//        ));
         return groupInfo;
     }
 
     @Override
-    public void manageGroupUser(ManageGroupDTO manageGroupDTO) {
+    public void manageGroupUser(GroupManageDTO manageGroupDTO) {
         // 1. 判断操作者是否合法
         // 1.1 查询群聊信息
         GroupInfo groupInfo = baseMapper.selectById(manageGroupDTO.getGroupId());
@@ -150,16 +142,13 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         if (manageGroupDTO.getOpType() == 1) {
             // 2.1.1 添加成员
             for (String contactId : contactIds) {
-                // TODO
+                manageGroupContact(contactId, manageGroupDTO.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
             }
 
         } else if (manageGroupDTO.getOpType() == 2) {
             // 2.1.2 移除成员
             for (String contactId : contactIds) {
-                leaveGroup(new ManageGroupDTO() {{
-                    setGroupId(manageGroupDTO.getGroupId());
-                    setContactIds(contactId);
-                }});
+                manageGroupContact(contactId, manageGroupDTO.getGroupId(), ContactStatusEnum.DEL_FRIEND.getStatus());
             }
         } else {
             throw new BusinessException(Constants.GROUP_OP_TYPE_UNKNOWN);
@@ -168,7 +157,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void leaveGroup(ManageGroupDTO manageGroupDTO) {
+    public void leaveGroup(GroupManageDTO manageGroupDTO) {
         // 1. 判断群聊是否存在
         GroupInfo groupInfo = baseMapper.selectById(manageGroupDTO.getGroupId());
         if (groupInfo == null) {
@@ -179,12 +168,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             throw new BusinessException(Constants.GROUP_OWNER_CANT_LEAVE);
         }
         // 3. 移除用户
-        userContactMapper.delete(
-                new QueryWrapper<UserContact>()
-                        .eq("user_id", manageGroupDTO.getContactIds())
-                        .eq("contact_id", groupInfo.getGroupId())
-                        .eq("contact_type", ContactTypeEnum.GROUP.getStatus())
-        );
+        manageGroupContact(manageGroupDTO.getContactIds(), manageGroupDTO.getGroupId(), ContactStatusEnum.DEL_FRIEND.getStatus());
         // 4. TODO 通知成员退出
         // 5. TODO 更新会话消息
     }
@@ -209,6 +193,35 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         // 4. TODO 删除群聊成员
         // 5. TODO 删除会话
         // 6. TODO 通知成员解散
+    }
+
+    /**
+     * 加入群聊
+     * @param userId
+     * @param groupId
+     */
+    public void manageGroupContact(@NotNull String userId, @NotNull String groupId, @NotNull Integer contactType) {
+        // 1. 创建关系
+        ContactDTO contactDTO = new ContactDTO();
+        contactDTO.setUserId(userId);
+        contactDTO.setContactId(groupId);
+        contactDTO.setContactType(contactType);
+        contactDTO.setCreateTime(DateTime.now());
+        contactDTO.setLastUpdateTime(DateTime.now());
+        contactDTO.setStatus(ContactStatusEnum.FRIEND.getStatus());
+        contactClient.createContact(contactDTO);
+        // 2. 更新群聊成员数量
+        if (contactType == ContactStatusEnum.DEL_FRIEND.getStatus()) {
+            // 2.1.2 移除成员
+            baseMapper.update(null, new LambdaUpdateWrapper<GroupInfo>()
+                    .eq(GroupInfo::getGroupId, groupId)
+                    .setSql("member_count = member_count - 1"));
+        } else {
+            // 2.1.1 添加成员
+            baseMapper.update(null, new LambdaUpdateWrapper<GroupInfo>()
+                    .eq(GroupInfo::getGroupId, groupId)
+                    .setSql("member_count = member_count + 1"));
+        }
     }
 
 

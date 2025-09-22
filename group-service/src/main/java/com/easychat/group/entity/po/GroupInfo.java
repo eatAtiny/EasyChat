@@ -1,4 +1,4 @@
-package com.easychat.contact.entity.dto;
+package com.easychat.group.entity.po;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -17,7 +17,7 @@ import java.util.Date;
  * 群信息
  */
 @Data
-public class GroupInfoDTO implements Serializable {
+public class GroupInfo implements Serializable {
 
 
     /**
