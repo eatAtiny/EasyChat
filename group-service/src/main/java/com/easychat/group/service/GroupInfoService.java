@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.easychat.group.entity.dto.GroupInfoDTO;
 import com.easychat.group.entity.dto.GroupManageDTO;
 import com.easychat.group.entity.po.GroupInfo;
+import com.easychat.group.entity.vo.SearchResultVO;
 
 public interface GroupInfoService extends IService<GroupInfo> {
 
@@ -13,6 +14,13 @@ public interface GroupInfoService extends IService<GroupInfo> {
      * @return 是否新增成功
      */
     public boolean saveGroup(GroupInfoDTO groupInfoDTO);
+
+    /**
+     * 搜索群聊
+     * @param groupId 群聊ID
+     * @return 群聊详情
+     */
+    public SearchResultVO searchGroup(String groupId);
 
     /**
      * 加载群聊详情

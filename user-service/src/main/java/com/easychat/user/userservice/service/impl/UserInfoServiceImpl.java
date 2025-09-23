@@ -8,10 +8,15 @@ import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.entity.dto.TokenUserInfoDTO;
+import com.easychat.user.userservice.api.ContactClient;
 import com.easychat.user.userservice.config.UserServiceConfig;
 import com.easychat.user.userservice.constant.Constants;
+import com.easychat.user.userservice.entity.dto.ContactDTO;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
+import com.easychat.user.userservice.entity.enums.ContactStatusEnum;
+import com.easychat.user.userservice.entity.enums.ContactTypeEnum;
 import com.easychat.user.userservice.entity.po.UserInfoBeauty;
+import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
 import com.easychat.user.userservice.mapper.UserInfoBeautyMapper;
 import com.easychat.user.userservice.mapper.UserInfoMapper;
@@ -35,6 +40,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
 
     @Autowired
     private UserServiceConfig userServiceConfig;
+
+    @Autowired
+    private ContactClient contactClient;
 
     /**
      * 注册用户
@@ -139,5 +147,32 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             tokenUserInfoDTO.setAdmin(false);
         }
         return tokenUserInfoDTO;
+    }
+
+    /**
+     * 搜索用户信息
+     */
+    @Override
+    public SearchResultVO searchUserInfo(String contactId) {
+        // 1. 获取用户信息
+        UserInfo userInfo = baseMapper.selectById(contactId);
+        if (userInfo == null) {
+            return null;
+        }
+        SearchResultVO searchResultVO = new SearchResultVO();
+        BeanUtils.copyProperties(userInfo, searchResultVO);
+        searchResultVO.setContactId(contactId);
+        searchResultVO.setContactType(ContactTypeEnum.USER.getName());
+        // 2. 获取用户关系信息
+        ContactDTO contactDTO = contactClient.getContactInfo(contactId);
+        if (contactDTO != null) {
+            searchResultVO.setStatus(contactDTO.getStatus());
+            searchResultVO.setStatusName(ContactStatusEnum.getDescByStatus(contactDTO.getStatus()));
+        }else{
+            searchResultVO.setStatus(ContactStatusEnum.NO_FRIEND.getStatus());
+            searchResultVO.setStatusName(ContactStatusEnum.NO_FRIEND.getDesc());
+        }
+
+        return searchResultVO;
     }
 }

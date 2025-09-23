@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: EasyChat-common
   datasource:
     url: jdbc:mysql://172.23.80.100:3306/easychat?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver

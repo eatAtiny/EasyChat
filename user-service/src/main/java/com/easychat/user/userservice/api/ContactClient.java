@@ -1,10 +1,9 @@
-package com.easychat.group.api;
+package com.easychat.user.userservice.api;
 
-import com.easychat.group.entity.dto.ContactDTO;
+import com.easychat.user.userservice.entity.dto.ContactDTO;
+import lombok.Getter;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient("contact-service")
@@ -12,10 +11,4 @@ public interface ContactClient {
 
     @GetMapping("/contact")
     ContactDTO getContactInfo(@RequestParam("contactId") String contactId);
-
-    /**
-     * 创建关系
-     */
-    @PostMapping("/contact")
-    void createContact(@ModelAttribute ContactDTO contactDTO);
 }

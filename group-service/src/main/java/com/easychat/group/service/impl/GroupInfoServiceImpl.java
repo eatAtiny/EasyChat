@@ -13,7 +13,9 @@ import com.easychat.group.entity.dto.GroupInfoDTO;
 import com.easychat.group.entity.dto.GroupManageDTO;
 import com.easychat.group.entity.dto.ContactDTO;
 import com.easychat.group.entity.enums.ContactStatusEnum;
+import com.easychat.group.entity.enums.ContactTypeEnum;
 import com.easychat.group.entity.po.GroupInfo;
+import com.easychat.group.entity.vo.SearchResultVO;
 import com.easychat.group.mapper.GroupInfoMapper;
 import com.easychat.group.service.GroupInfoService;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             groupInfo.setGroupId(StringTools.getGroupId());
             groupInfo.setCreateTime(DateTime.now());
             groupInfo.setStatus(Constants.GROUP_STATUS_NORMAL);
+            groupInfo.setMemberCount(1);
             baseMapper.insert(groupInfo);
             // 1.3 将自己加入群聊
             manageGroupContact(groupInfoDTO.getGroupOwnerId(), groupInfoDTO.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
@@ -95,6 +98,29 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         }
 
         return true;
+    }
+
+    @Override
+    public SearchResultVO searchGroup(String groupId) {
+        // 1. 查询群聊信息
+        GroupInfo groupInfo = baseMapper.selectById(groupId);
+        if (groupInfo == null) {
+            return null;
+        }
+        SearchResultVO searchResultVO = new SearchResultVO();
+        searchResultVO.setContactId(groupId);
+        searchResultVO.setContactType(ContactTypeEnum.GROUP.getName());
+        searchResultVO.setNickName(groupInfo.getGroupName());
+        // 2. 查询群聊关系
+        ContactDTO contactDTO = contactClient.getContactInfo(groupId);
+        if (contactDTO != null) {
+            searchResultVO.setStatus(contactDTO.getStatus());
+            searchResultVO.setStatusName(ContactStatusEnum.getDescByStatus(contactDTO.getStatus()));
+        } else {
+            searchResultVO.setStatus(ContactStatusEnum.NO_FRIEND.getStatus());
+            searchResultVO.setStatusName(ContactStatusEnum.NO_FRIEND.getDesc());
+        }
+        return searchResultVO;
     }
 
     @Override

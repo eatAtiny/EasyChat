@@ -10,6 +10,7 @@ import com.easychat.common.utils.RedisUtils;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.po.UserInfo;
+import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
 import com.easychat.user.userservice.service.UserInfoService;
@@ -58,9 +59,7 @@ public class UserController extends BaseController {
     /**
      * 注册
      * @param userInfoDTO 用户信息DTO
-     * @return
      */
-
     @ApiOperation("注册")
     @PostMapping("/register")
     public ResponseVO register(@ModelAttribute UserInfoDTO userInfoDTO) {
@@ -94,8 +93,9 @@ public class UserController extends BaseController {
 
     /**
      * 获取系统设置
-     * @return
+     * @return 系统设置
      */
+    @ApiOperation("获取系统设置")
     @GetMapping("/setting")
     public ResponseVO getSysSetting() {
         SysSettingDTO sysSettingDTO = redisComponet.getSysSetting();
@@ -104,8 +104,16 @@ public class UserController extends BaseController {
         return getSuccessResponseVO(sysSettingVO);
     }
 
-    @GetMapping("/search")
-    public UserInfo search(@RequestParam("contactId") String contactId) {
-        return userInfoService.getById(contactId);
+
+    /**
+     * 根据用户ID搜索用户信息
+     * @param contactId 用户id
+     * @return 用户信息
+     */
+    @ApiOperation("根据用户ID搜索用户信息")
+    @GetMapping("/{contactId}")
+    public ResponseVO searchUserInfo(@PathVariable("contactId") String contactId) {
+        SearchResultVO searchResultVO = userInfoService.searchUserInfo(contactId);
+        return getSuccessResponseVO(searchResultVO);
     }
 }

@@ -1,4 +1,4 @@
-package com.easychat.group.entity.enums;
+package com.easychat.user.userservice.entity.enums;
 
 import lombok.Getter;
 

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.vo.ResponseVO;
+import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.UserContext;
 import com.easychat.contact.entity.dto.ContactApplyDTO;
 import com.easychat.contact.entity.dto.ContactDTO;
@@ -14,6 +15,7 @@ import com.easychat.contact.entity.vo.PageResultVO;
 import com.easychat.contact.entity.vo.SearchResultVO;
 import com.easychat.contact.service.ContactApplyService;
 import com.easychat.contact.service.ContactService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -23,13 +25,33 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/contact")
+@RequestMapping("/contact")
 public class ContactController extends BaseController {
 
     @Autowired
     private ContactService contactService;
     @Autowired
     private ContactApplyService contactApplyService;
+
+    /**
+     * 获取联系信息
+     * @param contactId 对方id
+     * @return 关系信息DTO
+     */
+    @GetMapping("")
+    public ContactDTO getContactInfo(@RequestParam("contactId") String contactId) {
+        Contact contact = contactService.getBaseMapper().selectOne(
+                new LambdaQueryWrapper<Contact>()
+                        .eq(Contact::getUserId, UserContext.getUser())
+                        .eq(Contact::getContactId, contactId)
+        );
+        if (contact == null) {
+            return null;
+        }
+        ContactDTO contactDTO = new ContactDTO();
+        BeanUtils.copyProperties(contact, contactDTO);
+        return contactDTO;
+    }
 
     /**
      * 搜索群组/用户
@@ -101,20 +123,9 @@ public class ContactController extends BaseController {
 
 
     /**
-     * 获取联系人详情
-     * @param contactId 联系人ID
-     * @return 联系人详情
-     */
-//    @PostMapping("/loadContactDetail")
-//    public ResponseVO loadContactDetail(@NotEmpty String contactId) {
-//        Contact userContact = contactService.loadContactDetail(contactId);
-//        return getSuccessResponseVO(userContact);
-//    }
-
-    /**
      * 创建关系
      */
-    @PostMapping("/createContact")
+    @PostMapping("")
     public ResponseVO createContact(@ModelAttribute ContactDTO contactDTO) {
         contactService.createContact(contactDTO);
         return getSuccessResponseVO(null);
