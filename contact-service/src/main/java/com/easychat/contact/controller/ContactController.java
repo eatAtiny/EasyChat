@@ -15,6 +15,7 @@ import com.easychat.contact.entity.vo.PageResultVO;
 import com.easychat.contact.entity.vo.SearchResultVO;
 import com.easychat.contact.service.ContactApplyService;
 import com.easychat.contact.service.ContactService;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -51,17 +52,6 @@ public class ContactController extends BaseController {
         ContactDTO contactDTO = new ContactDTO();
         BeanUtils.copyProperties(contact, contactDTO);
         return contactDTO;
-    }
-
-    /**
-     * 搜索群组/用户
-     * @param contactId 群组/用户ID
-     * @return 搜索结果
-     */
-    @PostMapping("/search")
-    public ResponseVO search(@RequestParam("contactId") String contactId) {
-        SearchResultVO searchResultVO= contactService.search(contactId);
-        return getSuccessResponseVO(searchResultVO);
     }
 
     /**
@@ -115,8 +105,9 @@ public class ContactController extends BaseController {
     /**
      * 获取联系人列表
      */
-    @PostMapping("/loadContact")
-    public ResponseVO loadContact(@NotEmpty String contactType) {
+    @ApiOperation("根据联系人类型获取联系人列表")
+    @GetMapping("/{contactType}")
+    public ResponseVO loadContact(@PathVariable("contactType") String contactType) {
         List<Contact> contacts = contactService.getContactList(contactType);
         return getSuccessResponseVO(contacts);
     }
@@ -126,7 +117,7 @@ public class ContactController extends BaseController {
      * 创建关系
      */
     @PostMapping("")
-    public ResponseVO createContact(@ModelAttribute ContactDTO contactDTO) {
+    public ResponseVO createContact(@RequestBody ContactDTO contactDTO) {
         contactService.createContact(contactDTO);
         return getSuccessResponseVO(null);
     }

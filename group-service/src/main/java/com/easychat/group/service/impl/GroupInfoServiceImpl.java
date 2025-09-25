@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import com.easychat.common.entity.kafka.GroupInfoMessage;
 import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.utils.UserContext;
@@ -18,10 +19,10 @@ import com.easychat.group.entity.po.GroupInfo;
 import com.easychat.group.entity.vo.SearchResultVO;
 import com.easychat.group.mapper.GroupInfoMapper;
 import com.easychat.group.service.GroupInfoService;
+import com.easychat.group.kafka.KafkaMessageService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.info.JavaInfoContributor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,9 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
 
     @Autowired
     private ContactClient contactClient;
+    
+    @Autowired
+    private KafkaMessageService kafkaMessageService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -51,10 +55,21 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             groupInfo.setGroupId(StringTools.getGroupId());
             groupInfo.setCreateTime(DateTime.now());
             groupInfo.setStatus(Constants.GROUP_STATUS_NORMAL);
-            groupInfo.setMemberCount(1);
+            groupInfo.setMemberCount(0);
+            // 发送群组创建事件到Kafka
+            GroupInfoMessage event = new GroupInfoMessage();
+            event.setEventType(GroupInfoMessage.EventType.CREATE);
+            event.setGroupId(groupInfo.getGroupId());
+            event.setGroupName(groupInfo.getGroupName());
+            event.setGroupOwnerId(groupInfo.getGroupOwnerId());
+            event.setGroupNotice(groupInfo.getGroupNotice());
+            kafkaMessageService.sendGroupInfoChangeEvent(event);
             baseMapper.insert(groupInfo);
+            
+
+            
             // 1.3 将自己加入群聊
-            manageGroupContact(groupInfoDTO.getGroupOwnerId(), groupInfoDTO.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
+            manageGroupContact(groupInfo.getGroupOwnerId(), groupInfo.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
             // 1.4 TODO 创建会话
             // 1.5 TODO 创建消息
 
@@ -72,6 +87,16 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             // 2.3 更新群聊信息
             BeanUtils.copyProperties(groupInfoDTO, groupInfo);
             baseMapper.updateById(groupInfo);
+            
+            // 发送群组更新事件到Kafka
+            GroupInfoMessage event = new GroupInfoMessage();
+            event.setEventType(GroupInfoMessage.EventType.UPDATE);
+            event.setGroupId(groupInfo.getGroupId());
+            event.setGroupName(groupInfo.getGroupName());
+            event.setGroupOwnerId(groupInfo.getGroupOwnerId());
+            event.setGroupNotice(groupInfo.getGroupNotice());
+            kafkaMessageService.sendGroupInfoChangeEvent(event);
+            
             // 2.4 TODO 更新会话
 
         }
@@ -170,7 +195,6 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             for (String contactId : contactIds) {
                 manageGroupContact(contactId, manageGroupDTO.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
             }
-
         } else if (manageGroupDTO.getOpType() == 2) {
             // 2.1.2 移除成员
             for (String contactId : contactIds) {
@@ -179,6 +203,18 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         } else {
             throw new BusinessException(Constants.GROUP_OP_TYPE_UNKNOWN);
         }
+        
+        // 查询更新后的群聊信息
+        GroupInfo updatedGroupInfo = baseMapper.selectById(manageGroupDTO.getGroupId());
+        
+        // 发送群组成员变更事件到Kafka
+        GroupInfoMessage event = new GroupInfoMessage();
+        event.setEventType(GroupInfoMessage.EventType.MEMBER_CHANGE);
+        event.setGroupId(updatedGroupInfo.getGroupId());
+        event.setGroupName(updatedGroupInfo.getGroupName());
+        event.setGroupOwnerId(updatedGroupInfo.getGroupOwnerId());
+        event.setGroupNotice(updatedGroupInfo.getGroupNotice());
+        kafkaMessageService.sendGroupInfoChangeEvent(event);
     }
 
     @Override

@@ -18,12 +18,6 @@ public interface ContactService extends IService<Contact> {
 //    boolean addFriend(Contact userContact);
 
     /**
-     * 搜索
-     * @param contactId 群组/用户ID
-     */
-    SearchResultVO search(String contactId);
-
-    /**
      * 申请添加好友
      * @param contactApplyDTO 申请添加好友DTO
      */

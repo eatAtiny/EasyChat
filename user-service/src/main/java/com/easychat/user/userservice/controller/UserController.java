@@ -8,7 +8,7 @@ import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.RedisUtils;
 
 import com.easychat.user.userservice.constant.Constants;
-import com.easychat.user.userservice.entity.dto.UserInfoDTO;
+import com.easychat.user.userservice.entity.dto.UserFormDTO;
 import com.easychat.user.userservice.entity.po.UserInfo;
 import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
@@ -58,19 +58,19 @@ public class UserController extends BaseController {
 
     /**
      * 注册
-     * @param userInfoDTO 用户信息DTO
+     * @param userFormDTO 用户信息DTO
      */
     @ApiOperation("注册")
     @PostMapping("/register")
-    public ResponseVO register(@ModelAttribute UserInfoDTO userInfoDTO) {
+    public ResponseVO register(@ModelAttribute UserFormDTO userFormDTO) {
         try {
-            if (!userInfoDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey()))) {
+            if (!userFormDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey()))) {
                 throw new BusinessException(Constants.ERROR_MSG_CHECK_CODE);
             }
-            userInfoService.register(userInfoDTO);
+            userInfoService.register(userFormDTO);
             return getSuccessResponseVO(null);
         } finally {
-            redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey());
+            redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey());
         }
     }
 
@@ -79,15 +79,15 @@ public class UserController extends BaseController {
      */
     @ApiOperation("登录接口")
     @PostMapping("")
-    public ResponseVO login(@ModelAttribute UserInfoDTO userInfoDTO) {
+    public ResponseVO login(@ModelAttribute UserFormDTO userFormDTO) {
         try {
-            if (!userInfoDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey()))) {
+            if (!userFormDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey()))) {
                 throw new BusinessException(Constants.ERROR_MSG_CHECK_CODE);
             }
-            UserInfoVO userInfoVO = userInfoService.login(userInfoDTO);
+            UserInfoVO userInfoVO = userInfoService.login(userFormDTO);
             return getSuccessResponseVO(userInfoVO);
         } finally {
-            redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + userInfoDTO.getCheckCodeKey());
+            redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey());
         }
     }
 
@@ -111,9 +111,21 @@ public class UserController extends BaseController {
      * @return 用户信息
      */
     @ApiOperation("根据用户ID搜索用户信息")
-    @GetMapping("/{contactId}")
+    @GetMapping("/search/{contactId}")
     public ResponseVO searchUserInfo(@PathVariable("contactId") String contactId) {
         SearchResultVO searchResultVO = userInfoService.searchUserInfo(contactId);
         return getSuccessResponseVO(searchResultVO);
+    }
+
+    /**
+     * 获取用户信息
+     * @param contactId 用户id
+     * @return 用户信息
+     */
+    @ApiOperation("根据用户ID获取用户信息")
+    @GetMapping("/{contactId}")
+    public UserInfo getUserInfo(@PathVariable("contactId") String contactId) {
+        UserInfo userInfo = userInfoService.getById(contactId);
+        return userInfo;
     }
 }

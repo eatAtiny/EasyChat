@@ -13,6 +13,13 @@ spring:
     nacos:
       discovery:
         server-addr: 172.23.80.100:8848
+  kafka:
+    # Kafka服务器地址
+    bootstrap-servers: 172.23.80.100:9094
+    # 消费者配置
+    consumer:
+      # 消费者组ID
+      group-id: group-service-group
 redisson:
   address: "redis://172.23.80.100:6379"
 

@@ -8,16 +8,19 @@ import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.entity.dto.TokenUserInfoDTO;
+import com.easychat.common.entity.kafka.UserInfoMessage;
 import com.easychat.user.userservice.api.ContactClient;
 import com.easychat.user.userservice.config.UserServiceConfig;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.ContactDTO;
+import com.easychat.user.userservice.entity.dto.UserFormDTO;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.enums.ContactStatusEnum;
 import com.easychat.user.userservice.entity.enums.ContactTypeEnum;
 import com.easychat.user.userservice.entity.po.UserInfoBeauty;
 import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
+import com.easychat.user.userservice.kafka.KafkaMessageService;
 import com.easychat.user.userservice.mapper.UserInfoBeautyMapper;
 import com.easychat.user.userservice.mapper.UserInfoMapper;
 import com.easychat.user.userservice.service.UserInfoService;
@@ -43,21 +46,24 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
 
     @Autowired
     private ContactClient contactClient;
+    
+    @Autowired
+    private KafkaMessageService kafkaMessageService;
 
     /**
      * 注册用户
-     * @param userInfoDTO 用户注册信息
+     * @param userFormDTO 用户注册信息
      */
     @Override
-    public void register(UserInfoDTO userInfoDTO) {
+    public void register(UserFormDTO userFormDTO) {
         // 1. 查看用户是否存在
-        UserInfo userInfo = baseMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, userInfoDTO.getEmail()));
+        UserInfo userInfo = baseMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, userFormDTO.getEmail()));
         if (userInfo != null) {
             throw new BusinessException(Constants.ERROR_MSG_USER_EXIST);
         }
         // 2. 查询靓号
         String userId;
-        UserInfoBeauty userInfoBeauty = userInfoBeautyMapper.selectOne(new LambdaQueryWrapper<UserInfoBeauty>().eq(UserInfoBeauty::getEmail, userInfoDTO.getEmail()));
+        UserInfoBeauty userInfoBeauty = userInfoBeautyMapper.selectOne(new LambdaQueryWrapper<UserInfoBeauty>().eq(UserInfoBeauty::getEmail, userFormDTO.getEmail()));
         if (userInfoBeauty != null) {
             // 2.1 需要设置靓号
             userId = userInfoBeauty.getUserId();
@@ -71,11 +77,11 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         // 3. 保存用户信息
         userInfo = new UserInfo();
         userInfo.setUserId(userId);
-        userInfo.setEmail(userInfoDTO.getEmail());
-        userInfo.setNickName(userInfoDTO.getNickName());
+        userInfo.setEmail(userFormDTO.getEmail());
+        userInfo.setNickName(userFormDTO.getNickName());
         userInfo.setJoinType(Constants.USER_DEFAULT_JOIN_TYPE);
         userInfo.setSex(Constants.USER_DEFAULT_SEX);
-        userInfo.setPassword(StringTools.encodeByMD5(userInfoDTO.getPassword()));
+        userInfo.setPassword(StringTools.encodeByMD5(userFormDTO.getPassword()));
         userInfo.setPersonalSignature(Constants.USER_DEFAULT_PERSONAL_SIGNATURE);
         userInfo.setStatus(Constants.USER_DEFAULT_STATUS);
         userInfo.setCreateTime(DateTime.now());
@@ -84,20 +90,27 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         userInfo.setAreaCode(Constants.USER_DEFAULT_AREA_CODE);
         userInfo.setLastOffTime(DateTime.now().getTime());
         baseMapper.insert(userInfo);
+        
+        // 发送用户创建事件到Kafka
+        UserInfoMessage event = new UserInfoMessage();
+        BeanUtils.copyProperties(userInfo, event);
+        event.setEventType(UserInfoMessage.EventType.CREATE);
+        kafkaMessageService.sendUserInfoChangeEvent(event);
+        
         // 4. TODO 添加机器人好友
 
     }
 
     @Override
-    public UserInfoVO login(UserInfoDTO userInfoDTO) {
+    public UserInfoVO login(UserFormDTO userFormDTO) {
         // 1. 校验用户信息
         // 1.1 检查用户是否存在
-        UserInfo userInfo = baseMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, userInfoDTO.getEmail()));
+        UserInfo userInfo = baseMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, userFormDTO.getEmail()));
         if (userInfo == null) {
             throw new BusinessException(Constants.ERROR_MSG_USER_NOT_EXIST);
         }
         // 1.2 校验密码
-        if (!Objects.equals(userInfoDTO.getPassword(), userInfo.getPassword())) {
+        if (!Objects.equals(userFormDTO.getPassword(), userInfo.getPassword())) {
             throw new BusinessException(Constants.ERROR_MSG_PASSWORD_ERROR);
         }
         // 1.3 检查用户状态
@@ -110,6 +123,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         if (lastHeartBeat != null) {
             throw new BusinessException(Constants.ERROR_MSG_USER_LOGIN);
         }
+        // 1.5 更新用户登录时间
+        userInfo.setLastLoginTime(DateTime.now());
+        baseMapper.updateById(userInfo);
 
         // 2. 加载用户信息
         // 2.1 TODO 加载群聊
@@ -174,5 +190,27 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         }
 
         return searchResultVO;
+    }
+
+    /**
+     * 更新用户信息
+     */
+    @Override
+    public void updateUserInfo(UserInfoDTO userInfoDTO) {
+        // 1. 检查用户是否存在
+        UserInfo userInfo = baseMapper.selectById(userInfoDTO.getUserId());
+        if (userInfo == null) {
+            throw new BusinessException(Constants.ERROR_MSG_USER_NOT_EXIST);
+        }
+        
+        // 2. 更新用户信息
+        BeanUtils.copyProperties(userInfoDTO, userInfo);
+        baseMapper.updateById(userInfo);
+        
+        // 3. 发送用户更新事件到Kafka
+        UserInfoMessage event = new UserInfoMessage();
+        BeanUtils.copyProperties(userInfo, event);
+        event.setEventType(UserInfoMessage.EventType.UPDATE);
+        kafkaMessageService.sendUserInfoChangeEvent(event);
     }
 }

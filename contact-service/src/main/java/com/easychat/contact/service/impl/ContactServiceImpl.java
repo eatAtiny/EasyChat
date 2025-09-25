@@ -41,44 +41,6 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     @Autowired
     private ContactGroupInfoMapper contactGroupInfoMapper;
 
-    @Override
-    public SearchResultVO search(String contactId) {
-        // 1. 判断ID是否合法（以G或者U开头的12位字符串）
-        if (!contactId.matches(Constants.CONTACT_ID_REGEX)){
-            return null;
-        }
-
-        // 2. 根据ID从数据库查询用户/群组信息
-        SearchResultVO searchResultVO = new SearchResultVO();
-        if (contactId.charAt(0) == ContactTypeEnum.GROUP.getPrefix()){
-            ContactGroupInfo contactGroupInfo = contactGroupInfoMapper.selectById(contactId);
-            if (contactGroupInfo != null){
-                GroupInfoDTO groupInfoDTO = groupClient.getGroupInfo(contactGroupInfo.getGroupId());
-                searchResultVO.setContactType(ContactTypeEnum.GROUP.getName());
-                searchResultVO.setNickName(groupInfoDTO.getGroupName());
-                searchResultVO.setContactId(groupInfoDTO.getGroupId());
-                searchResultVO.setStatusName(groupInfoDTO.getStatus() == Constants.GROUP_STATUS_NORMAL ? "正常" : "解散");
-            }
-        } else {
-            UserInfoDTO userInfoDTO = userClient.search(contactId);
-            if (userInfoDTO != null){
-                searchResultVO.setContactType(ContactTypeEnum.USER.getName());
-                searchResultVO.setNickName(userInfoDTO.getNickName());
-                searchResultVO.setContactId(userInfoDTO.getUserId());
-                searchResultVO.setStatusName(userInfoDTO.getStatus() == Constants.GROUP_STATUS_NORMAL ? "正常" : "禁用");
-                searchResultVO.setAreaName(userInfoDTO.getAreaName());
-                searchResultVO.setSex(userInfoDTO.getSex());
-            }
-        }
-        // 3. 从UserContact表查询是否存在好友关系
-        Contact contact = baseMapper.selectOne(new LambdaQueryWrapper<Contact>()
-                        .eq(Contact::getUserId, UserContext.getUser())
-                .eq(Contact::getContactId, contactId));
-        searchResultVO.setStatus(contact == null ? null : contact.getStatus());
-
-        return searchResultVO;
-    }
-
     /**
      * 申请添加好友关系
      *
@@ -107,7 +69,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
             contactApplyDTO.setReceiveUserId(groupInfo.getGroupOwnerId());
         }else if (contactApplyDTO.getContactType().equals(ContactTypeEnum.USER.getStatus())){
             // 3.2 检查用户是否存在
-            UserInfoDTO userInfoDTO = userClient.search(contactApplyDTO.getContactId());
+            UserInfoDTO userInfoDTO = userClient.getUserInfo(contactApplyDTO.getContactId());
             if (userInfoDTO == null){
                 throw new BusinessException(Constants.USER_NOT_EXIST);
             }

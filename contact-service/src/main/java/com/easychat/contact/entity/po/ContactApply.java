@@ -14,7 +14,7 @@ import java.io.Serializable;
  * 联系人申请
  */
 @Data
-@TableName("user_contact_apply")
+@TableName("contact_apply")
 public class ContactApply implements Serializable {
 
 
