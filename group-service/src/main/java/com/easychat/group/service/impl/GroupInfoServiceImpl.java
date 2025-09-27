@@ -219,25 +219,6 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void leaveGroup(GroupManageDTO manageGroupDTO) {
-        // 1. 判断群聊是否存在
-        GroupInfo groupInfo = baseMapper.selectById(manageGroupDTO.getGroupId());
-        if (groupInfo == null) {
-            return ;
-        }
-        // 2. 判断用户是否为群聊群主
-        if (StringUtils.equals(groupInfo.getGroupOwnerId(), manageGroupDTO.getContactIds())) {
-            throw new BusinessException(Constants.GROUP_OWNER_CANT_LEAVE);
-        }
-        // 3. 移除用户
-        manageGroupContact(manageGroupDTO.getContactIds(), manageGroupDTO.getGroupId(), ContactStatusEnum.DEL_FRIEND.getStatus());
-        // 4. TODO 通知成员退出
-        // 5. TODO 更新会话消息
-    }
-
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
     public void dissolutionGroup(String groupId) {
         // 1. 判断群聊是否存在
         GroupInfo groupInfo = baseMapper.selectById(groupId);

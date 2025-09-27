@@ -36,12 +36,6 @@ public interface GroupInfoService extends IService<GroupInfo> {
     public void manageGroupUser(GroupManageDTO manageGroupDTO);
 
     /**
-     * 退出群聊
-     * @param manageGroupDTO 退出群聊DTO
-     */
-    public void leaveGroup(GroupManageDTO manageGroupDTO);
-
-    /**
      * 解散群聊
      * @param groupId 群聊ID
      */

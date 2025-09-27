@@ -90,29 +90,29 @@ public class GroupController extends BaseController {
         return getSuccessResponseVO("操作成功");
     }
 
-
-//    /**
-//     * 退出群聊
-//     * @param groupId 群聊ID
-//     */
-//    @PostMapping("/leaveGroup")
-//    public ResponseVO leaveGroup(@NotNull @RequestParam("groupId") String groupId) {
-//        GroupManageDTO groupManageDTO = new GroupManageDTO();
-//        groupManageDTO.setGroupId(groupId);
-//        groupManageDTO.setContactIds(UserContext.getUser());
-//        groupInfoService.leaveGroup(groupManageDTO);
-//        return getSuccessResponseVO("退出成功");
-//    }
-
     /**
      * 解散群聊
      * @param groupId 群聊ID
      */
     @DeleteMapping("/{groupId}")
     public ResponseVO dissolutionGroup(@NotNull @PathVariable("groupId") String groupId) {
-        groupInfoService.dissolutionGroup(groupId);
-        return getSuccessResponseVO("解散成功");
+//      TODO  1.设置群聊状态为解散 2.修改所有群成员状态为退出
+        return getSuccessResponseVO(null);
     }
+
+    /**
+     * 加载群聊详情(供contact服务使用)
+     * @param groupId 群聊ID
+     * @return 群聊详情
+     */
+    @ApiOperation("获取群聊详情")
+    @GetMapping("/service/{groupId}")
+    public GroupInfo serviceGetGroupInfo(@NotNull @PathVariable("groupId") String groupId) {
+        GroupInfo groupInfo = groupInfoService.loadGroupDetail(groupId);
+        return groupInfo;
+    }
+
+
 
 
 

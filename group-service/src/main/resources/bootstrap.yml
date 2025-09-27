@@ -1,10 +1,16 @@
+# Spring Cloud Bootstrap配置 - 用于早期加载的关键配置
 spring:
   application:
     name: group-service # 服务名称
   cloud:
     nacos:
-      server-addr: 172.23.80.100 # nacos地址
+      # 统一的Nacos服务器地址配置
+      server-addr: 172.23.80.100:8848
+      # 配置中心相关配置
       config:
-        file-extension: yaml # 文件后缀名
-        shared-configs: # 共享配置
-          - dataId: shared-log.yaml # 共享日志配置
+        file-extension: yaml
+        shared-configs:
+          - dataId: shared-log.yaml
+      # 服务发现相关配置
+      discovery:
+        server-addr: 172.23.80.100:8848
