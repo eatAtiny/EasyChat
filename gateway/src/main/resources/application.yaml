@@ -7,7 +7,7 @@ spring:
 easychat:
   auth:
     excludePaths:
-      - /user
+      - /user/login
       - /user/register
       - /user/checkCode
       - /hi

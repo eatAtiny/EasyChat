@@ -7,6 +7,7 @@ import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.RedisUtils;
 
+import com.easychat.common.utils.UserContext;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserFormDTO;
 import com.easychat.user.userservice.entity.po.UserInfo;
@@ -17,6 +18,7 @@ import com.easychat.user.userservice.service.UserInfoService;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,7 @@ import java.util.UUID;
 @Api(tags = "用户相关接口")
 @RestController
 @RequestMapping("/user")
+@Slf4j
 public class UserController extends BaseController {
     @Autowired
     private RedisUtils redisUtils;
@@ -78,13 +81,15 @@ public class UserController extends BaseController {
      * 登录接口
      */
     @ApiOperation("登录接口")
-    @PostMapping("")
+    @PostMapping("/login")
     public ResponseVO login(@ModelAttribute UserFormDTO userFormDTO) {
+        log.info("登录请求参数: {}", userFormDTO);
         try {
             if (!userFormDTO.getCheckCode().equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey()))) {
                 throw new BusinessException(Constants.ERROR_MSG_CHECK_CODE);
             }
             UserInfoVO userInfoVO = userInfoService.login(userFormDTO);
+            log.info("登录成功{}", userInfoVO);
             return getSuccessResponseVO(userInfoVO);
         } finally {
             redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + userFormDTO.getCheckCodeKey());
@@ -119,13 +124,28 @@ public class UserController extends BaseController {
 
     /**
      * 获取用户信息
-     * @param contactId 用户id
      * @return 用户信息
      */
-    @ApiOperation("根据用户ID获取用户信息")
-    @GetMapping("/{contactId}")
-    public UserInfo getUserInfo(@PathVariable("contactId") String contactId) {
-        UserInfo userInfo = userInfoService.getById(contactId);
+    @ApiOperation("获取用户信息")
+    @GetMapping("")
+    public ResponseVO getUserInfo() {
+        // 打印用户ID，用于调试
+        String userId = UserContext.getUser();
+        System.out.println("UserController getUserInfo - UserContext userId: " + userId);
+        
+        UserInfo userInfo = userInfoService.getById(userId);
+        return getSuccessResponseVO(userInfo);
+    }
+
+
+    /**
+     * 获取用户信息(供contact服务使用)
+     * @param userId 用户id
+     * @return 用户信息
+     */
+    @GetMapping("/service/{userId}")
+    public UserInfo ServiceGetUserInfo(@PathVariable("userId") String userId) {
+        UserInfo userInfo = userInfoService.getById(userId);
         return userInfo;
     }
 }
