@@ -1,40 +1,176 @@
 package com.easychat.contact.service.impl;
 
-import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.exception.BusinessException;
+import com.easychat.common.utils.UserContext;
+import com.easychat.contact.api.GroupClient;
+import com.easychat.contact.api.UserClient;
 import com.easychat.contact.constant.Constants;
 import com.easychat.contact.entity.dto.ContactApplyDTO;
 import com.easychat.contact.entity.dto.ContactDTO;
+import com.easychat.contact.entity.dto.GroupInfoDTO;
+import com.easychat.contact.entity.dto.UserInfoDTO;
 import com.easychat.contact.entity.enums.ContactApplyStatusEnum;
+import com.easychat.contact.entity.enums.ContactJoinTypeEnum;
 import com.easychat.contact.entity.enums.ContactStatusEnum;
 import com.easychat.contact.entity.enums.ContactTypeEnum;
 import com.easychat.contact.entity.po.Contact;
 import com.easychat.contact.entity.po.ContactApply;
 import com.easychat.contact.mapper.ContactApplyMapper;
-import com.easychat.contact.mapper.ContactMapper;
 import com.easychat.contact.service.ContactApplyService;
+import com.easychat.contact.service.ContactService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Service
 public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, ContactApply> implements ContactApplyService {
 
     @Autowired
-    private ContactMapper contactMapper;
+    private ContactService contactService;
 
+    @Autowired
+    private GroupClient groupClient;
+
+    @Autowired
+    private UserClient userClient;
+
+    /**
+     * 申请添加好友关系
+     *
+     * @param contactApplyDTO 申请添加好友DTO
+     */
     @Override
-    public void createContactApply(ContactApplyDTO contactApplyDTO) {
-        ContactApply contactApply = new ContactApply();
-        BeanUtils.copyProperties(contactApplyDTO, contactApply);
-        contactApply.setLastApplyTime(System.currentTimeMillis());
-        contactApply.setStatus(ContactApplyStatusEnum.PENDING.getStatus());
-        baseMapper.insert(contactApply);
+    @Transactional(rollbackFor = Exception.class)
+    public void applyAdd(ContactApplyDTO contactApplyDTO) {
+        // 0. 检查是否已存在好友申请
+        ContactApply contactApply = baseMapper.selectOne(new LambdaQueryWrapper<ContactApply>()
+                .eq(ContactApply::getApplyUserId, contactApplyDTO.getApplyUserId())
+                .eq(ContactApply::getContactId, contactApplyDTO.getContactId()));
+        if (contactApply != null && contactApply.getStatus().equals(ContactApplyStatusEnum.PENDING.getStatus())){
+            throw new BusinessException(Constants.APPLY_INFO_EXIST);
+        }
+        // 1. 查询所申请的联系人/群组信息
+        Contact contact = contactService.getBaseMapper().selectOne(new LambdaQueryWrapper<Contact>()
+                .eq(Contact::getUserId, contactApplyDTO.getApplyUserId())
+                .eq(Contact::getContactId, contactApplyDTO.getContactId()));
+        // 2. 检查是否被拉黑
+        if (contact != null && contact.getStatus().equals(ContactStatusEnum.BLOCK_FRIEND.getStatus())){
+            throw new BusinessException(Constants.CONTACT_USER_STATUS_BLOCKED);
+        }
+        // 3. 检查用户/群组是否存在
+        Integer joinType =null;
+        if (contactApplyDTO.getContactType().equals(ContactTypeEnum.GROUP.getStatus())){
+            // 3.1 检查群组是否存在
+            GroupInfoDTO groupInfo;
+            try {
+                groupInfo = groupClient.getGroupInfo(contactApplyDTO.getContactId());
+                if (groupInfo == null){
+                    throw new BusinessException(Constants.GROUP_NOT_EXIST);
+                }
+                joinType = groupInfo.getJoinType();
+                // 将申请接收人设为群主
+                contactApplyDTO.setReceiveUserId(groupInfo.getGroupOwnerId());
+            } catch (Exception e) {
+                // 处理群组服务调用失败的情况，包括UnknownHostException
+                throw new BusinessException(Constants.GROUP_INFO_SERVICE_ERROR);
+            }
+        }else if (contactApplyDTO.getContactType().equals(ContactTypeEnum.USER.getStatus())){
+            // 3.2 检查用户是否存在
+            UserInfoDTO userInfoDTO;
+            try {
+                userInfoDTO = userClient.getUserInfo(contactApplyDTO.getContactId());
+                if (userInfoDTO == null){
+                    throw new BusinessException(Constants.USER_NOT_EXIST);
+                }
+                joinType = userInfoDTO.getJoinType();
+                // 将申请接收人设为对方
+                contactApplyDTO.setReceiveUserId(userInfoDTO.getUserId());
+            } catch (Exception e) {
+                // 处理用户服务调用失败的情况
+                throw new BusinessException(Constants.USER_INFO_SERVICE_ERROR);
+            }
+        }else{
+            throw new BusinessException(Constants.ERROR_OPERATION);
+        }
+        // 4. 检查用户/群组申请权限
+        if (joinType.equals(ContactJoinTypeEnum.DIRECT.getStatus())){
+            // 4.1 直接加入，无需审核，创建双向好友关系
+            ContactDTO contactDTO = new ContactDTO();
+            contactDTO.setUserId(contactApplyDTO.getApplyUserId());
+            contactDTO.setContactId(contactApplyDTO.getContactId());
+            contactDTO.setContactType(contactApplyDTO.getContactType());
+            contactDTO.setStatus(ContactStatusEnum.FRIEND.getStatus());
+            if (contactApplyDTO.getContactType().equals(ContactTypeEnum.GROUP.getStatus())){
+                // 4.1.1 群组直接加入
+                contactService.manageContact(contactDTO);
+            } else {
+                // 4.1.2 用户创建双向好友关系
+                contactService.manageContact(contactDTO);
+                String contactId =  contactDTO.getContactId();
+                contactDTO.setContactId(contactDTO.getUserId());
+                contactDTO.setUserId(contactId);
+                contactService.manageContact(contactDTO);
+            }
+        } else if (joinType.equals(ContactJoinTypeEnum.AUDIT.getStatus())) {
+            // 4.2 需要审核，加入申请表
+            if (contactApply == null) {
+                contactApply = new ContactApply();
+                BeanUtils.copyProperties(contactApplyDTO, contactApply);
+                contactApply.setLastApplyTime(System.currentTimeMillis());
+                contactApply.setStatus(ContactApplyStatusEnum.PENDING.getStatus());
+                baseMapper.insert(contactApply);
+            } else {
+                // 更新最后申请时间
+                contactApply.setLastApplyTime(System.currentTimeMillis());
+                contactApply.setStatus(ContactApplyStatusEnum.PENDING.getStatus());
+                baseMapper.updateById(contactApply);
+            }
+        } else {
+            throw new BusinessException(Constants.ERROR_OPERATION);
+        }
+
+
+        // 2. TODO 发消息通知群主/用户
+
+    }
+
+    /**
+     * 获取申请列表，包含联系人信息
+     * @param pageNo 页码
+     * @return 分页结果
+     */
+    @Override
+    public IPage<ContactApply> getApplyList(Integer pageNo) {
+        IPage<ContactApply> page = new Page<>(pageNo, 10);
+
+        // 使用自定义SQL进行联合查询
+        List<ContactApply> applyList = baseMapper.selectApplyListWithUserInfo(UserContext.getUser());
+
+        // 计算分页
+        int startIndex = (pageNo - 1) * 10;
+        int endIndex = Math.min(startIndex + 10, applyList.size());
+
+        if (startIndex < applyList.size()) {
+            page.setRecords(applyList.subList(startIndex, endIndex));
+        } else {
+            page.setRecords(new ArrayList<>());
+        }
+
+        page.setTotal(applyList.size());
+        page.setCurrent(pageNo);
+        page.setSize(10);
+        page.setPages((applyList.size() + 9) / 10);
+
+        return page;
     }
 
     /**
@@ -68,56 +204,36 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             contactDTO.setContactId(apply.getContactId());
             contactDTO.setContactType(apply.getContactType());
             contactDTO.setStatus(ContactStatusEnum.FRIEND.getStatus());
-            createContact(contactDTO);
+            contactService.manageContact(contactDTO);
             // 4.1.1 若是用户还需要创建双向好友关系
             if (apply.getContactType().equals(ContactTypeEnum.USER.getStatus())){
                 String userId = apply.getApplyUserId();
                 contactDTO.setUserId(apply.getContactId());
                 contactDTO.setContactId(userId);
-                createContact(contactDTO);
+                contactService.manageContact(contactDTO);
             }
         } else if (status.equals(ContactApplyStatusEnum.REFUSE.getStatus())) {
             // 4.2 拒绝申请，无需后续处理
 
         } else if (status.equals(ContactApplyStatusEnum.BLOCKED.getStatus())) {
-            // 4.3 拉黑申请，创建单向好友拉黑关系
+            // 4.3 拉黑申请，创建好友拉黑关系
             ContactDTO contactDTO = new ContactDTO();
             contactDTO.setUserId(apply.getApplyUserId());
             contactDTO.setContactId(apply.getContactId());
             contactDTO.setContactType(apply.getContactType());
             contactDTO.setStatus(ContactStatusEnum.BLOCK_FRIEND.getStatus());
-            createContact(contactDTO);
-        }
-
-    }
-
-    /**
-     * 添加/拉黑好友|加入/拉黑群聊
-     * @param contactDTO 添加好友DTO
-     */
-    public void createContact(ContactDTO contactDTO) {
-        // 1. 查询所申请的联系人/群组信息
-        Contact contact = contactMapper.selectOne(new LambdaQueryWrapper<Contact>()
-                .eq(Contact::getUserId, contactDTO.getUserId())
-                .eq(Contact::getContactId, contactDTO.getContactId()));
-        if (contact == null){
-            // 2.1 关系表中没有记录，添加好友/加入群组
-            contact = new Contact();
-            BeanUtils.copyProperties(contactDTO, contact);
-            contact.setCreateTime(DateTime.now());
-            contact.setLastUpdateTime(DateTime.now());
-            contactMapper.insert(contact);
+            contactService.manageContact(contactDTO);
+            // 4.3.1 若是用户还需要创建双向好友拉黑关系
+            if (apply.getContactType().equals(ContactTypeEnum.USER.getStatus())){
+                String userId = apply.getApplyUserId();
+                contactDTO.setUserId(apply.getContactId());
+                contactDTO.setContactId(userId);
+                contactDTO.setStatus(ContactStatusEnum.BLOCK_BY_FRIEND.getStatus());
+                contactService.manageContact(contactDTO);
+            }
         } else {
-            // 2.2 关系表中存在记录，根据申请类型更新状态
-            // 2.2.1 好友关系表中存在记录，根据申请类型更新状态
-            contact.setStatus(contactDTO.getStatus());
-            contact.setLastUpdateTime(DateTime.now());
-            contactMapper.updateById(contact);
+            throw new BusinessException(Constants.ERROR_OPERATION);
         }
 
-        // 2. TODO 发消息通知申请人和接收人
-
     }
-
-
 }

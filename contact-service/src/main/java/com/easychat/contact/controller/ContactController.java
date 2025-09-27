@@ -9,6 +9,8 @@ import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.UserContext;
 import com.easychat.contact.entity.dto.ContactApplyDTO;
 import com.easychat.contact.entity.dto.ContactDTO;
+import com.easychat.contact.entity.enums.ContactStatusEnum;
+import com.easychat.contact.entity.enums.ContactTypeEnum;
 import com.easychat.contact.entity.po.Contact;
 import com.easychat.contact.entity.po.ContactApply;
 import com.easychat.contact.entity.vo.PageResultVO;
@@ -31,11 +33,19 @@ public class ContactController extends BaseController {
 
     @Autowired
     private ContactService contactService;
-    @Autowired
-    private ContactApplyService contactApplyService;
 
     /**
-     * 获取联系信息
+     * 获取联系人列表
+     */
+    @ApiOperation("根据联系人类型获取联系人列表")
+    @GetMapping("/{contactType}")
+    public ResponseVO loadContact(@PathVariable("contactType") String contactType) {
+        List<Contact> contacts = contactService.getContactList(contactType);
+        return getSuccessResponseVO(contacts);
+    }
+
+    /**
+     * 获取联系人信息
      * @param contactId 对方id
      * @return 关系信息DTO
      */
@@ -55,80 +65,33 @@ public class ContactController extends BaseController {
     }
 
     /**
-     * 申请添加好友/加入群聊
-     * @param contactApplyDTO 好友申请信息/群聊申请信息
-     */
-    @PostMapping(value = "/applyAdd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseVO applyAdd(@ModelAttribute ContactApplyDTO contactApplyDTO) {
-        contactApplyDTO.setApplyUserId(UserContext.getUser());
-        contactApplyDTO.setApplyInfo(contactApplyDTO.getApplyInfo() == null ? "我是"+ UserContext.getNickName() : contactApplyDTO.getApplyInfo());
-        contactService.applyAdd(contactApplyDTO);
-        return getSuccessResponseVO(null);
-    }
-
-    /**
-     * 加载好友申请/群聊申请
-     * @param pageNo 页面号
-     * @return 结果
-     */
-    @PostMapping("/loadApply")
-    public ResponseVO loadApply(@RequestParam("pageNo") Integer pageNo) {
-        PageResultVO<ContactApply> pageResultVO = new PageResultVO<>();
-        IPage<ContactApply> page = contactApplyService.page(
-                new Page<>(pageNo, 10),
-                new LambdaQueryWrapper<ContactApply>()
-                        .eq(ContactApply::getReceiveUserId, UserContext.getUser())
-        );
-        pageResultVO.setPageSize(10);
-        pageResultVO.setPageTotal((int) page.getTotal());
-        pageResultVO.setList(page.getRecords());
-        pageResultVO.setTotalCount((int)page.getTotal());
-        pageResultVO.setPageNo((int)page.getCurrent());
-        // TODO 联合查询用户昵称或者群聊昵称
-
-        return  getSuccessResponseVO(pageResultVO);
-
-    }
-
-    /**
-     * 处理申请
-     * @param applyId 申请ID
-     * @param status 处理操作 0:拒绝 1:同意 2:拉黑
-     */
-    @PostMapping("/dealWithApply")
-    public ResponseVO dealWithApply(@NotNull Integer applyId, @NotNull Integer status) {
-        contactApplyService.dealWithApply(applyId, status);
-        return getSuccessResponseVO(null);
-    }
-
-
-    /**
-     * 获取联系人列表
-     */
-    @ApiOperation("根据联系人类型获取联系人列表")
-    @GetMapping("/{contactType}")
-    public ResponseVO loadContact(@PathVariable("contactType") String contactType) {
-        List<Contact> contacts = contactService.getContactList(contactType);
-        return getSuccessResponseVO(contacts);
-    }
-
-
-    /**
-     * 创建关系
-     */
-    @PostMapping("")
-    public ResponseVO createContact(@RequestBody ContactDTO contactDTO) {
-        contactService.createContact(contactDTO);
-        return getSuccessResponseVO(null);
-    }
-
-    /**
      * 删除联系人
      */
-
+    @ApiOperation("删除联系人")
+    @DeleteMapping("")
+    public ResponseVO deleteContact(@RequestParam("contactId") String contactId) {
+        contactService.deleteContact(contactId);
+        return getSuccessResponseVO(null);
+    }
 
     /**
      * 拉黑联系人
      */
+     @ApiOperation("拉黑联系人")
+    @PostMapping("/blacklist")
+    public ResponseVO blacklistContact(@RequestParam("contactId") String contactId) {
+        contactService.blacklistContact(contactId);
+        return getSuccessResponseVO(null);
+    }
+
+    /**
+     * 退出群聊
+     */
+    @ApiOperation("退出群聊")
+    @DeleteMapping("/group")
+    public ResponseVO exitGroup(@RequestParam("groupId") String groupId) {
+        contactService.exitGroup(groupId);
+        return getSuccessResponseVO(null);
+    }
 
 }

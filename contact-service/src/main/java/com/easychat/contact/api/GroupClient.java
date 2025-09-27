@@ -6,13 +6,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient("group-server")
+@FeignClient(name = "group-service", fallback = GroupClientFallback.class)
 public interface GroupClient {
     /**
      * 获取群聊信息
      * @param groupId 群聊ID
      * @return 群聊信息
      */
-    @GetMapping("/group/{groupId}")
+    @GetMapping("/group/service/{groupId}")
     GroupInfoDTO getGroupInfo(@PathVariable("groupId") String groupId);
 }

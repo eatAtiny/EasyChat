@@ -13,6 +13,10 @@ spring:
     nacos:
       discovery:
         server-addr: 172.23.80.100:8848
+    # 启用Feign的降级功能
+    openfeign:
+      circuitbreaker:
+        enabled: true
   # Kafka必要配置
   kafka:
     bootstrap-servers: 172.23.80.100:9094

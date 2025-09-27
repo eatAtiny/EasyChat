@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easychat.contact.mapper.ContactApplyMapper">
+    
+    <select id="selectApplyListWithUserInfo" resultType="com.easychat.contact.entity.po.ContactApply">
+        select 
+            ca.*,
+            ui.nick_name as contact_name
+        from 
+            contact_apply ca
+        left join 
+            contact_user_info ui on ca.apply_user_id = ui.user_id
+        where 
+            ca.receive_user_id = #{receiveUserId}
+        order by 
+            ca.last_apply_time desc
+    </select>
+    
+</mapper>

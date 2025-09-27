@@ -22,6 +22,12 @@ public class Constants {
     public static final String GROUP_FULL = "群聊已满";
     public static final String APPLY_NOT_EXIST = "申请不存在";
     public static final String ERROR_OPERATION = "违法操作";
+    public static final String GROUP_INFO_SERVICE_ERROR = "获取群组信息失败，请稍后再试";
+    public static final String USER_INFO_SERVICE_ERROR = "获取用户信息失败，请稍后再试";
+    public static final String APPLY_INFO_EXIST = "申请已存在";
+    public static final String GROUP_INFO_EXIST = "群聊已存在";
+
+
 
     // 群聊状态
     public static final Integer GROUP_STATUS_DISSOLUTION = 0;  // 解散

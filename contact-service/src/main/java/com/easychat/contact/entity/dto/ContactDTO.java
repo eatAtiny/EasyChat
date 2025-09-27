@@ -2,6 +2,7 @@ package com.easychat.contact.entity.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.experimental.Accessors;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import java.util.Date;
  * 联系人
  */
 @Data
+@Accessors(chain = true)
 public class ContactDTO implements Serializable {
 
 

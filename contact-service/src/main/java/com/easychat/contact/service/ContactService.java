@@ -1,33 +1,18 @@
 package com.easychat.contact.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.contact.entity.dto.ContactApplyDTO;
 import com.easychat.contact.entity.dto.ContactDTO;
 import com.easychat.contact.entity.po.Contact;
-import com.easychat.contact.entity.vo.SearchResultVO;
 
 import java.util.List;
 
 public interface ContactService extends IService<Contact> {
-    /**
-     * 新增好友
-     *
-     * @param userContact
-     * @return
-     */
-//    boolean addFriend(Contact userContact);
 
     /**
-     * 申请添加好友
-     * @param contactApplyDTO 申请添加好友DTO
+     * 管理好友关系 根据DTO中的status去操作contact表
+     * @param contactDTO 关系DTO
      */
-    void applyAdd(ContactApplyDTO contactApplyDTO);
-
-    /**
-     * 添加好友
-     * @param contactDTO 添加好友DTO
-     */
-    void createContact(ContactDTO contactDTO);
+    void manageContact(ContactDTO contactDTO);
 
     /**
      * 获取联系人列表
@@ -35,4 +20,22 @@ public interface ContactService extends IService<Contact> {
      * @return 联系人列表
      */
     List<Contact> getContactList(String contactType);
+
+    /**
+     * 删除联系人
+     * @param contactId 联系人ID或者群组ID
+     */
+     void deleteContact(String contactId);
+
+     /**
+      * 拉黑联系人
+      * @param contactId 联系人ID或者群组ID
+      */
+     void blacklistContact(String contactId);
+
+     /**
+      * 退出群聊
+      * @param groupId 群组ID
+      */
+     void exitGroup(String groupId);
 }
