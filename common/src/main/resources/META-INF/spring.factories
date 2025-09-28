@@ -1,4 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.easychat.common.config.MvcConfig, \
   com.easychat.common.config.FeignConfig, \
-  com.easychat.common.config.KafkaConfig
+  com.easychat.common.config.KafkaConfig, \
+  com.easychat.common.config.AvatarConfig

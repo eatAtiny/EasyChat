@@ -36,5 +36,12 @@ public interface UserInfoService extends IService<UserInfo> {
      *
      * @param userInfoDTO 用户信息DTO
      */
-    void updateUserInfo(UserInfoDTO userInfoDTO);
+    UserInfo updateUserInfo(UserInfoDTO userInfoDTO);
+
+     /**
+      * 修改密码
+      *
+      * @param userInfoDTO 用户信息DTO
+      */
+    void updatePassword(UserInfoDTO userInfoDTO);
 }

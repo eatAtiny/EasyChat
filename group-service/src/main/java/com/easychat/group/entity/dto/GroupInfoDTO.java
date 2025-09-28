@@ -51,6 +51,7 @@ public class GroupInfoDTO implements Serializable {
      */
     private String groupOwnerNickName;
 
+
     private MultipartFile avatarFile;
 
     private MultipartFile avatarCover;

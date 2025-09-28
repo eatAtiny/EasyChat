@@ -10,6 +10,7 @@ import com.easychat.common.utils.RedisUtils;
 import com.easychat.common.utils.UserContext;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserFormDTO;
+import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.po.UserInfo;
 import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
@@ -19,6 +20,7 @@ import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -135,6 +137,27 @@ public class UserController extends BaseController {
         
         UserInfo userInfo = userInfoService.getById(userId);
         return getSuccessResponseVO(userInfo);
+    }
+
+    /**
+     * 修改用户信息
+     */
+    @ApiOperation("修改用户信息")
+    @PutMapping("")
+    public ResponseVO updateUserInfo(@ModelAttribute UserInfoDTO userInfoDTO) {
+        UserInfo userInfo = userInfoService.updateUserInfo(userInfoDTO);
+        return getSuccessResponseVO(userInfo);
+    }
+
+    /**
+     * 修改密码
+     */
+    @ApiOperation("修改密码")
+    @PutMapping("/password")
+    public ResponseVO updatePassword(@ModelAttribute UserInfoDTO userInfoDTO) {
+        log.info("修改密码请求参数: {}", userInfoDTO);
+        userInfoService.updatePassword(userInfoDTO);
+        return getSuccessResponseVO(null);
     }
 
 

@@ -3,12 +3,14 @@ package com.easychat.user.userservice.service.impl;
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.exception.BusinessException;
 
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.entity.dto.TokenUserInfoDTO;
 import com.easychat.common.entity.kafka.UserInfoMessage;
+import com.easychat.common.utils.UserContext;
 import com.easychat.user.userservice.api.ContactClient;
 import com.easychat.user.userservice.config.UserServiceConfig;
 import com.easychat.user.userservice.constant.Constants;
@@ -26,11 +28,20 @@ import com.easychat.user.userservice.mapper.UserInfoMapper;
 import com.easychat.user.userservice.service.UserInfoService;
 import com.easychat.user.userservice.entity.po.UserInfo;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jboss.marshalling.TraceInformation;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> implements UserInfoService {
@@ -49,6 +60,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     
     @Autowired
     private KafkaMessageService kafkaMessageService;
+
+    @Autowired
+    private AvatarConfig avatarConfig;
 
     /**
      * 注册用户
@@ -196,21 +210,103 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
      * 更新用户信息
      */
     @Override
-    public void updateUserInfo(UserInfoDTO userInfoDTO) {
+    @Transactional(rollbackFor = Exception.class)
+    public UserInfo updateUserInfo(UserInfoDTO userInfoDTO) {
         // 1. 检查用户是否存在
         UserInfo userInfo = baseMapper.selectById(userInfoDTO.getUserId());
         if (userInfo == null) {
             throw new BusinessException(Constants.ERROR_MSG_USER_NOT_EXIST);
         }
         
-        // 2. 更新用户信息
-        BeanUtils.copyProperties(userInfoDTO, userInfo);
+        // 2. 保存原始的创建时间和最后登录时间，避免被覆盖
+        Date originalCreateTime = userInfo.getCreateTime();
+        Date originalLastLoginTime = userInfo.getLastLoginTime();
+        
+        // 3. 更新用户信息（只更新非空字段）
+        BeanUtils.copyProperties(userInfoDTO, userInfo, getNullPropertyNames(userInfoDTO));
+        
+        // 4. 恢复原始的创建时间和最后登录时间
+        userInfo.setCreateTime(originalCreateTime);
+        userInfo.setLastLoginTime(originalLastLoginTime);
+        
+        // 5. 更新数据库
         baseMapper.updateById(userInfo);
         
-        // 3. 发送用户更新事件到Kafka
+        // 6. 发送用户更新事件到Kafka
         UserInfoMessage event = new UserInfoMessage();
         BeanUtils.copyProperties(userInfo, event);
         event.setEventType(UserInfoMessage.EventType.UPDATE);
         kafkaMessageService.sendUserInfoChangeEvent(event);
+
+        // 7. 处理头像
+        if (userInfoDTO.getAvatarFile() != null) {
+            // 3.1 保存头像到文件夹
+            // 获取当前项目根目录
+            String projectPath = System.getProperty("user.dir");
+
+            // 构建完整的文件夹路径
+            String avatarPath = projectPath + File.separator + avatarConfig.getPath();
+            String avatarCoverPath = projectPath + File.separator + avatarConfig.getCoverPath();
+
+            try {
+                File avatarDir = new File(avatarPath);
+                // 如果文件夹不存在则创建
+                if (!avatarDir.exists()) {
+                    avatarDir.mkdirs(); // 递归创建文件夹
+                }
+                File avatarCoverDir = new File(avatarCoverPath);
+                // 如果文件夹不存在则创建
+                if (!avatarCoverDir.exists()) {
+                    avatarCoverDir.mkdirs(); // 递归创建文件夹
+                }
+
+                // 3.1.1 头像
+                userInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + userInfoDTO.getUserId() + avatarConfig.getSuffix()));
+                // 3.1.2 群封面
+                userInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + userInfoDTO.getUserId() + avatarConfig.getCoverSuffix()));
+
+            } catch (IOException e) {
+                // 添加详细错误日志
+                log.error("头像保存失败");
+                throw new BusinessException("头像上传失败: " + e.getMessage());
+            }
+        }
+
+        return userInfo;
+    }
+
+    /**
+     * 修改密码
+     */
+    @Override
+    public void updatePassword(UserInfoDTO userInfoDTO) {
+        // 1. 检查用户是否存在
+        UserInfo userInfo = baseMapper.selectById(UserContext.getUser());
+        if (userInfo == null) {
+            throw new BusinessException(Constants.ERROR_MSG_USER_NOT_EXIST);
+        }
+        // 2. 加密新密码
+        userInfoDTO.setPassword(StringTools.encodeByMD5(userInfoDTO.getPassword()));
+        // 3. 更新密码
+        BeanUtils.copyProperties(userInfoDTO, userInfo, getNullPropertyNames(userInfoDTO));
+        baseMapper.updateById(userInfo);
+    }
+    
+    /**
+     * 获取对象中值为null的属性名数组
+     */
+    private String[] getNullPropertyNames(Object source) {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        
+        Set<String> emptyNames = new HashSet<>();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object srcValue = src.getPropertyValue(pd.getName());
+            if (srcValue == null) {
+                emptyNames.add(pd.getName());
+            }
+        }
+        String[] result = new String[emptyNames.size()];
+        return emptyNames.toArray(result);
     }
 }

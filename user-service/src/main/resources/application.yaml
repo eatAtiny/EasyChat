@@ -44,3 +44,9 @@ user-service:
   admin-emails: admin666@qq.com
 server:
   port: 8081
+easychat:
+  avatar:
+    path: avatar
+    suffix: .jpg
+    cover_path: avatar/cover
+    cover_suffix: _cover.jpg

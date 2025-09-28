@@ -3,7 +3,7 @@ package com.easychat.group.service.impl;
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
+import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.entity.kafka.GroupInfoMessage;
 import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.StringTools;
@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 @Service
 public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo> implements GroupInfoService {
@@ -38,6 +39,11 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
     
     @Autowired
     private KafkaMessageService kafkaMessageService;
+
+    @Autowired
+    private AvatarConfig avatarConfig;
+
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -66,7 +72,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             kafkaMessageService.sendGroupInfoChangeEvent(event);
             baseMapper.insert(groupInfo);
             
-
+            groupInfoDTO.setGroupId(groupInfo.getGroupId());
             
             // 1.3 将自己加入群聊
             manageGroupContact(groupInfo.getGroupOwnerId(), groupInfo.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
@@ -103,22 +109,34 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         // 3. 处理头像
         if (groupInfoDTO.getAvatarFile() != null) {
             // 3.1 保存头像到文件夹
+            // 获取当前项目根目录
+            String projectPath = System.getProperty("user.dir");
+
+            // 构建完整的文件夹路径
+            String avatarPath = projectPath + File.separator + avatarConfig.getPath();
+            String avatarCoverPath = projectPath + File.separator + avatarConfig.getCoverPath();
+
             try {
-                // 确保目录存在
-                File avatarDir = new File(Constants.AVATAR_PATH);
+                File avatarDir = new File(avatarPath);
+                // 如果文件夹不存在则创建
                 if (!avatarDir.exists()) {
-                    avatarDir.mkdirs();
+                    avatarDir.mkdirs(); // 递归创建文件夹
                 }
-                File coverDir = new File(Constants.AVATAR_COVER_PATH);
-                if (!coverDir.exists()) {
-                    coverDir.mkdirs();
+                File avatarCoverDir = new File(avatarCoverPath);
+                // 如果文件夹不存在则创建
+                if (!avatarCoverDir.exists()) {
+                    avatarCoverDir.mkdirs(); // 递归创建文件夹
                 }
+
                 // 3.1.1 头像
-                groupInfoDTO.getAvatarFile().transferTo(new File(Constants.AVATAR_PATH + groupInfoDTO.getGroupOwnerId() + Constants.AVATAR_SUFFIX));
+                groupInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + groupInfoDTO.getGroupId() + avatarConfig.getSuffix()));
                 // 3.1.2 群封面
-                groupInfoDTO.getAvatarCover().transferTo(new File(Constants.AVATAR_COVER_PATH + groupInfoDTO.getGroupOwnerId() + Constants.AVATAR_COVER_SUFFIX));
+                groupInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + groupInfoDTO.getGroupId() + avatarConfig.getCoverSuffix()));
+
             } catch (IOException e) {
-                throw new BusinessException("头像上传失败");
+                // 添加详细错误日志
+                log.error("头像保存失败");
+                throw new BusinessException("头像上传失败: " + e.getMessage());
             }
         }
 

@@ -1,6 +1,7 @@
 package com.easychat.user.userservice.entity.dto;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 
@@ -50,12 +51,13 @@ public class UserInfoDTO {
     /**
      * 创建时间
      */
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Date createTime;
 
     /**
      * 最后登录时间
      */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Date lastLoginTime;
 
     /**
@@ -72,4 +74,14 @@ public class UserInfoDTO {
      * 最后离开时间
      */
     private Long lastOffTime;
+
+     /**
+     * 头像文件
+     */
+    private MultipartFile avatarFile;
+
+    /**
+     * 封面文件
+     */
+    private MultipartFile avatarCover;
 }
