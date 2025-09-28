@@ -94,4 +94,15 @@ public class ContactController extends BaseController {
         return getSuccessResponseVO(null);
     }
 
+
+    /**
+     * 创建联系人关系(api)
+     */
+    @ApiOperation("创建联系人关系")
+    @PostMapping("")
+    public ResponseVO createContact(@RequestBody ContactDTO contactDTO) {
+        contactService.manageContact(contactDTO);
+        return getSuccessResponseVO(null);
+    }
+
 }
