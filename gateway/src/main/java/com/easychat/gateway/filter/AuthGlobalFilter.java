@@ -7,6 +7,7 @@ import com.easychat.common.utils.RedisUtils;
 import com.easychat.gateway.config.AuthProperties;
 import com.easychat.gateway.constant.Constants;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -24,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @EnableConfigurationProperties(AuthProperties.class)
@@ -58,6 +60,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         }
         // 4.校验并解析token
         TokenUserInfoDTO tokenUserInfoDTO = redisUtils.get(Constants.REDIS_KEY_WS_TOKEN + token);
+        log.info("解析token:{}",tokenUserInfoDTO);
 
         // 4.1 如果token无效，拦截
         if (tokenUserInfoDTO == null) {

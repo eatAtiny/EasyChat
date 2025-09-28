@@ -160,6 +160,18 @@ public class UserController extends BaseController {
         return getSuccessResponseVO(null);
     }
 
+    /**
+     * 退出登录
+     */
+    @ApiOperation("退出登录")
+    @PostMapping("/logout")
+    public ResponseVO logout() {
+        // TODO 关闭ws连接
+        // 清除Redis中的用户登录信息
+        redisComponet.cleanUserTokenByUserId(UserContext.getUser());
+        return getSuccessResponseVO(null);
+    }
+
 
     /**
      * 获取用户信息(供contact服务使用)

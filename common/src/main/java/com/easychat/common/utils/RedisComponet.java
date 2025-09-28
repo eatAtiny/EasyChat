@@ -47,6 +47,7 @@ public class RedisComponet {
         String token = (String) redisUtils.get(Constants.REDIS_KEY_WS_TOKEN_USERID + userId);
         if (!StringTools.isEmpty(token)) {
             redisUtils.delete(Constants.REDIS_KEY_WS_TOKEN + token);
+            redisUtils.delete(Constants.REDIS_KEY_WS_TOKEN_USERID + userId);
         }
     }
 
