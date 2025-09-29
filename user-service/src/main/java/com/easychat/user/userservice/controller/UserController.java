@@ -1,7 +1,11 @@
 package com.easychat.user.userservice.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.dto.SysSettingDTO;
+import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.RedisComponet;
@@ -172,6 +176,25 @@ public class UserController extends BaseController {
         return getSuccessResponseVO(null);
     }
 
+    /**
+     * 加载用户列表
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 用户列表
+     */
+    @ApiOperation("获取用户列表")
+    @GetMapping("/admin/userlist")
+    public ResponseVO getUserList(@RequestParam(defaultValue = "1") Integer pageNo, @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<UserInfo> page = new Page<>(pageNo, pageSize);
+        IPage<UserInfo> userPage = userInfoService.page(page, Wrappers.emptyWrapper());
+        PageResultVO pageResultVO = new PageResultVO();
+        pageResultVO.setList(userPage.getRecords()); // 用户数据列表
+        pageResultVO.setPageNo((int) userPage.getCurrent()); // 当前页码
+        pageResultVO.setPageSize((int) userPage.getSize()); // 每页条数
+        pageResultVO.setPageTotal((int) userPage.getPages()); // 总页数
+        pageResultVO.setTotalCount((int) userPage.getTotal()); // 总记录数
+        return getSuccessResponseVO(pageResultVO);
+    }
 
     /**
      * 获取用户信息(供contact服务使用)
