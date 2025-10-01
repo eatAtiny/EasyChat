@@ -1,7 +1,11 @@
 package com.easychat.group.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
+import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.utils.UserContext;
 import com.easychat.group.entity.dto.GroupInfoDTO;
@@ -98,6 +102,23 @@ public class GroupController extends BaseController {
     public ResponseVO dissolutionGroup(@NotNull @PathVariable("groupId") String groupId) {
 //      TODO  1.设置群聊状态为解散 2.修改所有群成员状态为退出
         return getSuccessResponseVO(null);
+    }
+
+    /**
+     * 获取群聊列表
+     */
+    @ApiOperation("获取群聊列表")
+    @GetMapping("/admin/groupList")
+    public ResponseVO loadGroupList(@RequestParam(defaultValue = "1") Integer pageNo, @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<GroupInfo> page = new Page<>(pageNo, pageSize);
+        IPage<GroupInfo> groupInfoPage = groupInfoService.page(page, Wrappers.emptyWrapper());
+        PageResultVO pageResultVO = new PageResultVO();
+        pageResultVO.setList(groupInfoPage.getRecords()); // 用户数据列表
+        pageResultVO.setPageNo((int) groupInfoPage.getCurrent()); // 当前页码
+        pageResultVO.setPageSize((int) groupInfoPage.getSize()); // 每页条数
+        pageResultVO.setPageTotal((int) groupInfoPage.getPages()); // 总页数
+        pageResultVO.setTotalCount((int) groupInfoPage.getTotal()); // 总记录数
+        return getSuccessResponseVO(pageResultVO);
     }
 
     /**

@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
+import com.easychat.common.api.AdminDubboService;
+import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.entity.dto.SysSettingDTO;
+import com.easychat.common.entity.po.AppUpdate;
 import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.exception.BusinessException;
@@ -14,21 +17,29 @@ import com.easychat.common.utils.RedisUtils;
 import com.easychat.common.utils.UserContext;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.user.userservice.entity.dto.UserFormDTO;
+import com.easychat.user.userservice.entity.dto.UserInfoBeautyDTO;
 import com.easychat.user.userservice.entity.dto.UserInfoDTO;
 import com.easychat.user.userservice.entity.po.UserInfo;
+import com.easychat.user.userservice.entity.po.UserInfoBeauty;
+import com.easychat.user.userservice.entity.vo.AppUpdateVO;
 import com.easychat.user.userservice.entity.vo.SearchResultVO;
 import com.easychat.user.userservice.entity.vo.SysSettingVO;
 import com.easychat.user.userservice.entity.vo.UserInfoVO;
+import com.easychat.user.userservice.mapper.UserInfoBeautyMapper;
+import com.easychat.user.userservice.service.UserInfoBeautyService;
 import com.easychat.user.userservice.service.UserInfoService;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.tomcat.jni.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -46,7 +57,19 @@ public class UserController extends BaseController {
     private UserInfoService userInfoService;
 
     @Autowired
+    private UserInfoBeautyService userInfoBeautyService;
+
+    @Autowired
     private RedisComponet redisComponet;
+
+    @Autowired
+    private UserInfoBeautyMapper userInfoBeautyMapper;
+
+    @Autowired
+    private AvatarConfig avatarConfig;
+
+    @DubboReference(check = false)
+    private AdminDubboService  adminDubboService;
 
     /**
      * 验证码
@@ -195,6 +218,76 @@ public class UserController extends BaseController {
         pageResultVO.setTotalCount((int) userPage.getTotal()); // 总记录数
         return getSuccessResponseVO(pageResultVO);
     }
+
+    /**
+     * 加载靓号列表
+     */
+    @ApiOperation("获取用户列表")
+    @GetMapping("/admin/userBeautyList")
+    public ResponseVO getUserBeautyList(@RequestParam(defaultValue = "1") Integer pageNo, @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<UserInfoBeauty> page = new Page<>(pageNo, pageSize);
+        IPage<UserInfoBeauty> userPage = userInfoBeautyMapper.selectPage(page, Wrappers.emptyWrapper());
+        PageResultVO pageResultVO = new PageResultVO();
+        pageResultVO.setList(userPage.getRecords()); // 用户数据列表
+        pageResultVO.setPageNo((int) userPage.getCurrent()); // 当前页码
+        pageResultVO.setPageSize((int) userPage.getSize()); // 每页条数
+        pageResultVO.setPageTotal((int) userPage.getPages()); // 总页数
+        pageResultVO.setTotalCount((int) userPage.getTotal()); // 总记录数
+        return getSuccessResponseVO(pageResultVO);
+    }
+
+    /**
+     * 新增或修改靓号
+     */
+    @ApiOperation("新增/修改靓号")
+    @PostMapping("/admin/userBeauty")
+    public ResponseVO addUserBeautyList(@ModelAttribute UserInfoBeautyDTO userInfoBeautyDTO) {
+        UserInfoBeauty userInfoBeauty = new UserInfoBeauty();
+        BeanUtils.copyProperties(userInfoBeautyDTO,userInfoBeauty);
+        userInfoBeautyService.saveOrUpdate(userInfoBeauty);
+        return getSuccessResponseVO(null);
+    }
+
+
+
+    /**
+     * 删除靓号
+     */
+    @ApiOperation("删除靓号")
+    @DeleteMapping("/admin/userBeauty/{id}")
+    public ResponseVO deleteUserBeauty(@PathVariable("id") Integer id) {
+        userInfoBeautyService.removeById(id);
+        return getSuccessResponseVO(null);
+    }
+
+    /**
+     * 版本更新
+     */
+     @ApiOperation("版本更新")
+     @PostMapping("/update")
+     public ResponseVO postUpdate(String appVersion) {
+         log.info("<UNK>: {}", appVersion);
+         if(appVersion==null||"".equals(appVersion)){
+             throw new BusinessException("版本信息丢失");
+         }
+        AppUpdate appUpdate = adminDubboService.getUpdate(appVersion, UserContext.getUser());
+        if (appUpdate == null) {
+            return getSuccessResponseVO(null);
+        }
+        AppUpdateVO updateVO = new AppUpdateVO();
+        BeanUtils.copyProperties(appUpdate, updateVO);
+        // 获取当前项目根目录
+        String projectPath = System.getProperty("user.dir");
+        // 构建完整的文件夹路径
+        String filePath = projectPath + File.separator + avatarConfig.getFilePath();
+        File file = new File(filePath + File.separator + updateVO.getVersion() + avatarConfig.getFileSuffix());
+        updateVO.setSize(file.length());
+        updateVO.setUpdateList(Arrays.asList(appUpdate.getUpdateDescArray()));
+        String fileName = updateVO.getVersion() + avatarConfig.getFileSuffix();
+        updateVO.setFileName(fileName);
+        return getSuccessResponseVO(appUpdate);
+     }
+
 
     /**
      * 获取用户信息(供contact服务使用)

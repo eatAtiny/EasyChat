@@ -17,6 +17,8 @@ public class AvatarConfig {
     private String suffix;
     private String coverPath;
     private String coverSuffix;
+    private String filePath;
+    private String fileSuffix;
 
     @PostConstruct  // 添加初始化验证
     public void checkConfig() {

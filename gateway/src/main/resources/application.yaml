@@ -14,4 +14,4 @@ easychat:
     includePaths:
     adminPaths:
       - /admin/**
-      - /user/admin/userlist
+      - /user/admin/**

@@ -1,7 +1,8 @@
-package com.easychat.common.entity.dto;
+package com.easychat.admin.entity.dto;
 
 
 import com.easychat.common.constants.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -28,7 +29,7 @@ public class SysSettingDTO implements Serializable {
      */
     private Integer maxVideoSize = 5;
 
-    /**
+     /**
      * 最大文件大小（MB）
      */
     private Integer maxFileSize = 5;
