@@ -1,7 +1,7 @@
 package com.easychat.contact.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.easychat.contact.entity.po.Contact;
+import com.easychat.common.entity.po.Contact;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;

@@ -1,0 +1,77 @@
+package com.easychat.common.entity.po;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.easychat.common.entity.enums.ContactApplyStatusEnum;
+import lombok.Data;
+
+import java.io.Serializable;
+
+
+/**
+ * 联系人申请
+ */
+@Data
+@TableName("contact_apply")
+public class ContactApply implements Serializable {
+
+
+    /**
+     * 自增ID
+     */
+    @TableId(type = IdType.AUTO)
+    private Integer applyId;
+
+    /**
+     * 申请人id
+     */
+    private String applyUserId;
+
+    /**
+     * 接收人ID
+     */
+    private String receiveUserId;
+
+    /**
+     * 联系人类型 0:用户 1:群聊
+     */
+    private Integer contactType;
+
+    /**
+     * 联系人群组ID
+     */
+    private String contactId;
+
+    /**
+     * 最后申请时间
+     */
+    private Long lastApplyTime;
+
+    /**
+     * 状态0:待同意 1:同意 2:已拒绝 3:拉黑
+     */
+    private Integer status;
+
+    /**
+     * 申请信息
+     */
+    private String applyInfo;
+
+    /**
+     * 联系人名称
+     */
+    @TableField(exist = false)
+    private String contactName;
+    /**
+     * 申请状态名称
+     */
+    @TableField(exist = false)
+    private String statusName;
+
+    public String getStatusName() {
+        ContactApplyStatusEnum statusEnum = ContactApplyStatusEnum.getByStatus(status);
+        return statusEnum == null ? null : statusEnum.getDesc();
+    }
+}

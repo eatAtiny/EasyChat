@@ -1,30 +1,17 @@
 package com.easychat.contact.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.vo.ResponseVO;
-import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.UserContext;
-import com.easychat.contact.entity.dto.ContactApplyDTO;
-import com.easychat.contact.entity.dto.ContactDTO;
-import com.easychat.contact.entity.enums.ContactStatusEnum;
-import com.easychat.contact.entity.enums.ContactTypeEnum;
-import com.easychat.contact.entity.po.Contact;
-import com.easychat.contact.entity.po.ContactApply;
-import com.easychat.contact.entity.vo.PageResultVO;
-import com.easychat.contact.entity.vo.SearchResultVO;
-import com.easychat.contact.service.ContactApplyService;
+import com.easychat.common.entity.dto.ContactDTO;
+import com.easychat.common.entity.po.Contact;
 import com.easychat.contact.service.ContactService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController

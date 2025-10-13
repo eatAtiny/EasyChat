@@ -2,9 +2,9 @@ package com.easychat.user.userservice.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.utils.UserContext;
-import com.easychat.user.userservice.entity.dto.UserInfoBeautyDTO;
-import com.easychat.user.userservice.entity.enums.UserInfoBeautyStatus;
-import com.easychat.user.userservice.entity.po.UserInfoBeauty;
+import com.easychat.common.entity.dto.UserInfoBeautyDTO;
+import com.easychat.common.entity.enums.UserInfoBeautyStatus;
+import com.easychat.common.entity.po.UserInfoBeauty;
 import com.easychat.user.userservice.mapper.UserInfoBeautyMapper;
 import com.easychat.user.userservice.service.UserInfoBeautyService;
 import org.springframework.beans.BeanUtils;

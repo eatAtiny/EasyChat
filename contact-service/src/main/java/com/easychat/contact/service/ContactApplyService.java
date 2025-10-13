@@ -2,8 +2,8 @@ package com.easychat.contact.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.contact.entity.dto.ContactApplyDTO;
-import com.easychat.contact.entity.po.ContactApply;
+import com.easychat.common.entity.dto.ContactApplyDTO;
+import com.easychat.common.entity.po.ContactApply;
 
 import java.util.List;
 

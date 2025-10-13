@@ -1,12 +1,11 @@
 package com.easychat.user.userservice.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-
-import com.easychat.user.userservice.entity.dto.UserFormDTO;
-import com.easychat.user.userservice.entity.dto.UserInfoDTO;
-import com.easychat.user.userservice.entity.po.UserInfo;
-import com.easychat.user.userservice.entity.vo.SearchResultVO;
-import com.easychat.user.userservice.entity.vo.UserInfoVO;
+import com.easychat.common.entity.dto.UserFormDTO;
+import com.easychat.common.entity.dto.UserInfoDTO;
+import com.easychat.common.entity.po.UserInfo;
+import com.easychat.common.entity.vo.SearchResultVO;
+import com.easychat.common.entity.vo.UserInfoVO;
 
 public interface UserInfoService extends IService<UserInfo> {
     /**

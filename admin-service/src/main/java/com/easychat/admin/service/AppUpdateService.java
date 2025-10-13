@@ -1,7 +1,7 @@
 package com.easychat.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.admin.entity.dto.AppUpdateDTO;
+import com.easychat.common.entity.dto.AppUpdateDTO;
 import com.easychat.common.entity.po.AppUpdate;
 
 public interface AppUpdateService extends IService<AppUpdate> {

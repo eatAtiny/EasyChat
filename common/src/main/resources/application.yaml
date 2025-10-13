@@ -9,22 +9,3 @@ spring:
     port: 6379
 redisson:
   address: "redis://172.23.80.100:6379"
-
-# MyBatis Plus配置
-mybatis-plus:
-  configuration:
-    # 开启驼峰命名自动映射
-    map-underscore-to-camel-case: true
-    # 日志实现
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      # 主键类型 AUTO:数据库自增 INPUT:手动输入
-      id-type: auto
-      # 逻辑删除配置
-      logic-delete-field: deleted  # 全局逻辑删除的实体字段名
-      logic-delete-value: 1       # 逻辑已删除值
-      logic-not-delete-value: 0   # 逻辑未删除值
-  # mapper.xml文件位置
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.easychat.common.entity.po

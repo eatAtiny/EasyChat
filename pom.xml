@@ -23,6 +23,7 @@
         <module>user-service</module>
         <module>contact-service</module>
         <module>group-service</module>
+        <module>chat-service</module>
     </modules>
     <!-- 版本属性管理 -->
     <properties>

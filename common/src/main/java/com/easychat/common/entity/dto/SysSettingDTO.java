@@ -28,7 +28,7 @@ public class SysSettingDTO implements Serializable {
      */
     private Integer maxVideoSize = 5;
 
-    /**
+     /**
      * 最大文件大小（MB）
      */
     private Integer maxFileSize = 5;

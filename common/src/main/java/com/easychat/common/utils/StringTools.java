@@ -1,7 +1,7 @@
 package com.easychat.common.utils;
 
 import com.easychat.common.constants.Constants;
-import com.easychat.common.entity.enums.UserContactTypeEnum;
+import com.easychat.common.entity.enums.ContactTypeEnum;
 import com.easychat.common.exception.BusinessException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -149,11 +149,11 @@ public class StringTools {
     }
 
     public static final String getGroupId() {
-        return UserContactTypeEnum.GROUP.getPrefix() + getRandomNumber(Constants.LENGTH_11);
+        return ContactTypeEnum.GROUP.getPrefix() + getRandomNumber(Constants.LENGTH_11);
     }
 
     public static final String getUserId() {
-        return UserContactTypeEnum.USER.getPrefix() + getRandomNumber(Constants.LENGTH_11);
+        return ContactTypeEnum.USER.getPrefix() + getRandomNumber(Constants.LENGTH_11);
     }
 
     public static final String getChatSessionId4User(String[] userIds) {

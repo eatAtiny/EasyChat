@@ -1,7 +1,7 @@
 package com.easychat.contact.kafka;
 
 import com.easychat.common.entity.kafka.GroupInfoMessage;
-import com.easychat.contact.entity.po.ContactGroupInfo;
+import com.easychat.common.entity.po.ContactGroupInfo;
 import com.easychat.contact.mapper.ContactGroupInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

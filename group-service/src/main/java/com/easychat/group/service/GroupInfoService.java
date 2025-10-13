@@ -1,10 +1,10 @@
 package com.easychat.group.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.group.entity.dto.GroupInfoDTO;
-import com.easychat.group.entity.dto.GroupManageDTO;
-import com.easychat.group.entity.po.GroupInfo;
-import com.easychat.group.entity.vo.SearchResultVO;
+import com.easychat.common.entity.dto.GroupInfoDTO;
+import com.easychat.common.entity.dto.GroupManageDTO;
+import com.easychat.common.entity.po.GroupInfo;
+import com.easychat.common.entity.vo.SearchResultVO;
 
 public interface GroupInfoService extends IService<GroupInfo> {
 

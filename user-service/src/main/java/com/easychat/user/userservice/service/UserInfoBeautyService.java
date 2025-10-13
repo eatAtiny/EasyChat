@@ -1,8 +1,8 @@
 package com.easychat.user.userservice.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.easychat.user.userservice.entity.dto.UserInfoBeautyDTO;
-import com.easychat.user.userservice.entity.po.UserInfoBeauty;
+import com.easychat.common.entity.dto.UserInfoBeautyDTO;
+import com.easychat.common.entity.po.UserInfoBeauty;
 import com.easychat.user.userservice.service.impl.UserInfoBeautyServiceImpl;
 
 import java.net.InterfaceAddress;

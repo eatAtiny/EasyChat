@@ -1,6 +1,6 @@
 package com.easychat.group.api;
 
-import com.easychat.group.entity.dto.ContactDTO;
+import com.easychat.common.entity.dto.ContactDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 

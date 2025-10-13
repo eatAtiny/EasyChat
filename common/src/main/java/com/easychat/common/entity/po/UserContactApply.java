@@ -2,7 +2,7 @@ package com.easychat.common.entity.po;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.easychat.common.entity.enums.UserContactApplyStatusEnum;
+import com.easychat.common.entity.enums.ContactApplyStatusEnum;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -68,7 +68,7 @@ public class UserContactApply implements Serializable {
     private String statusName;
 
     public String getStatusName() {
-        UserContactApplyStatusEnum statusEnum = UserContactApplyStatusEnum.getByStatus(status);
+        ContactApplyStatusEnum statusEnum = ContactApplyStatusEnum.getByStatus(status);
         return statusEnum == null ? null : statusEnum.getDesc();
     }
 }

@@ -1,16 +1,13 @@
 package com.easychat.contact.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.entity.vo.ResponseVO;
 import com.easychat.common.utils.UserContext;
-import com.easychat.contact.entity.dto.ContactApplyDTO;
-import com.easychat.contact.entity.po.ContactApply;
-import com.easychat.contact.entity.vo.PageResultVO;
+import com.easychat.common.entity.dto.ContactApplyDTO;
+import com.easychat.common.entity.po.ContactApply;
+import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.contact.service.ContactApplyService;
-import com.easychat.contact.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,6 +1,6 @@
 package com.easychat.user.userservice.api;
 
-import com.easychat.user.userservice.entity.dto.ContactDTO;
+import com.easychat.common.entity.dto.ContactDTO;
 import lombok.Getter;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

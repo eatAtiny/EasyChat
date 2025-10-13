@@ -1,6 +1,6 @@
 package com.easychat.contact.api;
 
-import com.easychat.contact.entity.dto.UserInfoDTO;
+import com.easychat.common.entity.dto.UserInfoDTO;
 import org.springframework.stereotype.Component;
 
 /**

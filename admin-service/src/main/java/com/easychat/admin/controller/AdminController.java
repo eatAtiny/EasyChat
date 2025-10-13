@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.easychat.admin.entity.dto.AppUpdateDTO;
+import com.easychat.common.entity.dto.AppUpdateDTO;
 import com.easychat.admin.service.AppUpdateService;
 import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.entity.dto.SysSettingDTO;

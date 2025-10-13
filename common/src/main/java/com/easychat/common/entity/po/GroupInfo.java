@@ -1,6 +1,8 @@
 package com.easychat.common.entity.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.easychat.common.entity.enums.DateTimePatternEnum;
 import com.easychat.common.utils.DateUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -21,6 +23,7 @@ public class GroupInfo implements Serializable {
     /**
      * 群ID
      */
+    @TableId(type = IdType.ASSIGN_ID)
     private String groupId;
 
     /**
@@ -55,7 +58,9 @@ public class GroupInfo implements Serializable {
      */
     private Integer status;
 
-    @TableField(exist = false)
+    /**
+     * 成员数量
+     */
     private Integer memberCount;
 
     @TableField(exist = false)

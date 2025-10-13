@@ -1,7 +1,6 @@
 package com.easychat.common.entity.po;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.easychat.common.entity.enums.UserContactTypeEnum;
 import lombok.Data;
 
 import java.io.Serializable;
