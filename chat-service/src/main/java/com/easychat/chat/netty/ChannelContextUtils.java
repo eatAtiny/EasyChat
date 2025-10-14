@@ -9,6 +9,7 @@ import com.easychat.chat.mapper.ChatSessionUserMapper;
 import com.easychat.common.api.UserInfoDubboService;
 import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.MessageSendDTO;
+import com.easychat.common.entity.dto.WsInitDataDTO;
 import com.easychat.common.entity.enums.ContactTypeEnum;
 import com.easychat.common.entity.enums.MessageTypeEnum;
 import com.easychat.common.entity.po.ChatMessage;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -104,19 +106,18 @@ public class ChannelContextUtils {
 //            sessionUserQuery.setUserId(userId);
 //            sessionUserQuery.setOrderBy("last_receive_time desc");
 //            List<ChatSessionUser> chatSessionList = chatSessionUserMapper.selectList(sessionUserQuery);
-//            WsInitData wsInitData = new WsInitData();
-//            wsInitData.setChatSessionList(chatSessionList);
 
             List<ChatSessionUser> chatSessionList = chatSessionUserMapper.selectList(
                     new LambdaQueryWrapper<ChatSessionUser>()
                             .eq(ChatSessionUser::getUserId, userId)
                             .orderByDesc(ChatSessionUser::getLastReceiveTime)
             );
+            WsInitDataDTO wsInitDataDTO = new WsInitDataDTO();
+            wsInitDataDTO.setChatSessionList(chatSessionList);
 
-
-//            /**
-//             * 2、查询聊天消息
-//             */
+            /**
+             * 2、查询聊天消息
+             */
 //            //查询用户的联系人
 //            UserContactQuery contactQuery = new UserContactQuery();
 //            contactQuery.setContactType(UserContactTypeEnum.GROUP.getType());
@@ -138,6 +139,7 @@ public class ChannelContextUtils {
 //            messageQuery.setLastReceiveTime(lastOffTime);
 //            List<ChatMessage> chatMessageList = chatMessageMapper.selectList(messageQuery);
 //            wsInitData.setChatMessageList(chatMessageList);
+            wsInitDataDTO.setChatMessageList(new ArrayList<>());
 //
 //            /**
 //             * 3、查询好友申请
@@ -149,13 +151,14 @@ public class ChannelContextUtils {
 //            Integer applyCount = userContactApplyMapper.selectCount(applyQuery);
 //            wsInitData.setApplyCount(applyCount);
 //
-//            //发送消息
-//            MessageSendDTO messageSendDTO = new MessageSendDTO();
-//            messageSendDTO.setMessageType(MessageTypeEnum.INIT.getType());
-//            messageSendDTO.setContactId(userId);
-//            messageSendDTO.setExtendData(wsInitData);
-//
-//            sendMsg(messageSendDTO, userId);
+            wsInitDataDTO.setApplyCount(0);
+            //发送消息
+            MessageSendDTO messageSendDTO = new MessageSendDTO();
+            messageSendDTO.setMessageType(MessageTypeEnum.INIT.getType());
+            messageSendDTO.setContactId(userId);
+            messageSendDTO.setExtendData(wsInitDataDTO);
+
+            sendMsg(messageSendDTO, userId);
         } catch (Exception e) {
             logger.error("初始化链接失败", e);
         }

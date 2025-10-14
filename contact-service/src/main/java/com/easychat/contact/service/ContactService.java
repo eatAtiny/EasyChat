@@ -38,4 +38,9 @@ public interface ContactService extends IService<Contact> {
       * @param groupId 群组ID
       */
      void exitGroup(String groupId);
+
+    /**
+     * 添加机器人为好友
+     */
+    void addRobotFriend(String userId);
 }

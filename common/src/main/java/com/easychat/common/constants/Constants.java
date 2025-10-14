@@ -3,6 +3,7 @@ package com.easychat.common.constants;
 import com.easychat.common.entity.enums.ContactTypeEnum;
 
 public class Constants {
+    public static final String ROBOT_ID = "Urobot";
     public static final String ZERO_STR = "0";
 
     public static final Integer ZERO = 0;

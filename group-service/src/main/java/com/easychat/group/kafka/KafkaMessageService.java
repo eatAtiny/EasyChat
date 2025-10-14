@@ -38,23 +38,4 @@ public class KafkaMessageService {
                 }
         );
     }
-
-    /**
-     * 通用发送方法
-     * @param topic 主题
-     * @param key 消息键
-     * @param value 消息值
-     */
-    public void send(String topic, String key, Object value) {
-        kafkaTemplate.send(topic, key, value).addCallback(
-                success -> {
-                    // 发送成功，确认消息
-                    log.info("发送成功");
-                },
-                failure -> {
-                    // 发送失败，记录日志或进行其他处理
-                    log.error("发送消息失败: {}", failure.getMessage());
-                }
-        );
-    }
 }

@@ -3,6 +3,7 @@ package com.easychat.contact.service.impl;
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.utils.UserContext;
 import com.easychat.common.entity.dto.ContactDTO;
 import com.easychat.common.entity.enums.ContactStatusEnum;
@@ -112,5 +113,21 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
                         .setContactId(groupId)
                         .setContactType(ContactTypeEnum.GROUP.getStatus())
                         .setStatus(ContactStatusEnum.DEL_FRIEND.getStatus()));
+     }
+
+    /**
+     * 添加机器人为好友
+     */
+     @Override
+     public void addRobotFriend(String Userid) {
+         // 1. 调用manageContact方法添加机器人为好友
+         manageContact(new ContactDTO()
+                        .setUserId(UserContext.getUser())
+                        .setContactId(Constants.ROBOT_ID)
+                        .setContactType(ContactTypeEnum.USER.getStatus())
+                        .setStatus(ContactStatusEnum.FRIEND.getStatus()));
+         // 2. 添加会话，调用远程方法
+
+         // 3. 添加消息，调用远程方法
      }
 }
