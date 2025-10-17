@@ -4,17 +4,24 @@
 <mapper namespace="com.easychat.contact.mapper.ContactMapper">
     <select id="getContactList" resultType="com.easychat.common.entity.po.Contact">
         select uc.*,
-               case
-                   when uc.contact_type = 0 then ui.nick_name
-                   when uc.contact_type = 1 then gi.group_name
-                   end as contact_name,
-               case
-                   when uc.contact_type = 0 then ui.sex
-                   when uc.contact_type = 1 then null
-                   end as sex
+        <if test="contactType == 0">
+            ui.nick_name as contact_name,
+            ui.sex as sex  <!-- 只有用户才有性别，群组为null -->
+        </if>
+        <if test="contactType == 1">
+            gi.group_name as contact_name,
+            null as sex  <!-- 群组无性别，直接返回null -->
+        </if>
         from contact uc
-                 left join contact_user_info ui on uc.contact_type = 0 and uc.contact_id = ui.user_id
-                 left join contact_group_info gi on uc.contact_type = 1 and uc.contact_id = gi.group_id
-        where uc.user_id = #{userId} and uc.contact_type = #{contactType} and uc.status = 1;
+        <!-- 动态关联表：type=0关联用户表，type=1关联群组表 -->
+        <if test="contactType == 0">
+            left join contact_user_info ui on uc.contact_id = ui.user_id
+        </if>
+        <if test="contactType == 1">
+            left join contact_group_info gi on uc.contact_id = gi.group_id
+        </if>
+        where uc.user_id = #{userId}
+        and uc.contact_type = #{contactType}  <!-- 用传入的type筛选类型 -->
+        and uc.status = 1;
     </select>
 </mapper>

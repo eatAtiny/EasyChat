@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.api.GroupInfoDubboService;
 import com.easychat.common.api.SessionDubboService;
+import com.easychat.common.api.UserInfoDubboService;
 import com.easychat.common.entity.dto.*;
 import com.easychat.common.entity.enums.*;
 import com.easychat.common.entity.po.*;
@@ -13,11 +14,10 @@ import com.easychat.common.exception.BusinessException;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.utils.UserContext;
-import com.easychat.contact.api.GroupClient;
-import com.easychat.contact.api.UserClient;
 import com.easychat.contact.constant.Constants;
 import com.easychat.contact.kafka.KafkaMessageService;
 import com.easychat.contact.mapper.ContactApplyMapper;
+import com.easychat.contact.mapper.ContactUserInfoMapper;
 import com.easychat.contact.service.ContactApplyService;
 import com.easychat.contact.service.ContactService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -37,24 +37,22 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
     @Autowired
     private ContactService contactService;
 
-    @Autowired
-    private GroupClient groupClient;
-
-    @Autowired
-    private UserClient userClient;
-
     @DubboReference(check = false)
     private SessionDubboService sessionDubboService;
 
     @DubboReference(check = false)
     private GroupInfoDubboService groupInfoDubboService;
 
+    @DubboReference(check = false)
+    private UserInfoDubboService userInfoDubboService;
+
     @Autowired
     private RedisComponet redisComponet;
 
     @Autowired
     private KafkaMessageService kafkaMessageService;
-
+    @Autowired
+    private ContactUserInfoMapper contactUserInfoMapper;
 
 
     /**
@@ -87,7 +85,7 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
         if (contactApplyDTO.getContactType().equals(ContactTypeEnum.GROUP.getStatus())){
             // 3.1 检查群组是否存在
             try {
-                groupInfoDTO = groupClient.getGroupInfo(contactApplyDTO.getContactId());
+                groupInfoDTO = groupInfoDubboService.getGroupInfo(contactApplyDTO.getContactId());
                 if (groupInfoDTO == null){
                     throw new BusinessException(Constants.GROUP_NOT_EXIST);
                 }
@@ -101,7 +99,7 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
         }else if (contactApplyDTO.getContactType().equals(ContactTypeEnum.USER.getStatus())){
             // 3.2 检查用户是否存在
             try {
-                userInfoDTO = userClient.getUserInfo(contactApplyDTO.getContactId());
+                userInfoDTO = userInfoDubboService.getUserInfo(contactApplyDTO.getContactId());
                 if (userInfoDTO == null){
                     throw new BusinessException(Constants.USER_NOT_EXIST);
                 }
@@ -137,11 +135,14 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             } else {
                 // 更新群组人数
                 groupInfoDubboService.addGroupMemberCount(contactApplyDTO.getContactId(), 1);
+                // 将user加入groupChannel
+                sessionDubboService.addGroupToChannel(contactApplyDTO.getApplyUserId(), contactApplyDTO.getContactId());
                 sessionId = StringTools.getChatSessionId4Group(contactApplyDTO.getContactId());
                 lastMessage = String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), UserContext.getNickName());
                 contactName = groupInfoDTO.getGroupName();
                 messageType = MessageTypeEnum.ADD_GROUP.getType();
             }
+            redisComponet.addUserContact(contactApplyDTO.getApplyUserId(), contactApplyDTO.getContactId());
             // 4.3 创建会话
 
             ChatSession chatSession = new ChatSession();
@@ -165,6 +166,7 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
                 friendChatSessionUser.setContactId(contactApplyDTO.getApplyUserId());
                 friendChatSessionUser.setContactName(UserContext.getNickName());
                 sessionDubboService.addSessionUser(friendChatSessionUser);
+                redisComponet.addUserContact(contactApplyDTO.getContactId(), contactApplyDTO.getApplyUserId());
             }
 
             // 4.5 增加聊天消息
@@ -178,10 +180,12 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             chatMessage.setContactId(contactApplyDTO.getContactId());
             chatMessage.setContactType(contactApplyDTO.getContactType());
             chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus());
-            sessionDubboService.addChatMessage(chatMessage);
+            // 添加消息到数据库，接收返回的包含自增ID的chatMessage对象
+            chatMessage = sessionDubboService.addChatMessage(chatMessage);
 
             // 4.6 向客户端发送消息
             MessageSendDTO messageSendDTO = new MessageSendDTO();
+            messageSendDTO.setExtendData(chatMessage);
             BeanUtils.copyProperties(chatMessage, messageSendDTO);
             if(groupInfoDTO != null){
                 messageSendDTO.setMemberCount(groupInfoDTO.getMemberCount() + 1);
@@ -192,7 +196,6 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
                 // 4.6.1 若申请对象为用户，则还需要给自身发送消息
                 messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND_SELF.getType());
                 messageSendDTO.setContactId(UserContext.getUser());
-                messageSendDTO.setExtendData(userInfoDTO);
                 kafkaMessageService.sendMessageToChannel(messageSendDTO);
             }
         } else if (joinType.equals(ContactJoinTypeEnum.AUDIT.getStatus())) {
@@ -217,15 +220,13 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             messageSendDTO.setContactId(contactApplyDTO.getContactId());
             messageSendDTO.setContactType(contactApplyDTO.getContactType());
             messageSendDTO.setMessageType(MessageTypeEnum.CONTACT_APPLY.getType());
+            messageSendDTO.setMessageContent(contactApplyDTO.getApplyInfo());
             messageSendDTO.setSendTime(System.currentTimeMillis());
             messageSendDTO.setStatus(MessageStatusEnum.SENDED.getStatus());
             kafkaMessageService.sendMessageToChannel(messageSendDTO);
         } else {
             throw new BusinessException(Constants.ERROR_OPERATION);
         }
-
-
-        // 2. TODO 发消息通知群主/用户
 
     }
 
@@ -291,6 +292,93 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             contactDTO.setContactType(apply.getContactType());
             contactDTO.setStatus(ContactStatusEnum.FRIEND.getStatus());
             addOrUpdateContact(contactDTO);
+
+            GroupInfoDTO groupInfoDTO = null;
+            UserInfoDTO userInfoDTO = null;
+            String sessionId = null;
+            String lastMessage = null;
+            String contactName = null;
+            Integer messageType = null;
+            if (ContactTypeEnum.USER.getStatus().equals(apply.getContactType())) {
+                userInfoDTO = userInfoDubboService.getUserInfo(apply.getContactId());
+                sessionId = StringTools.getChatSessionId4User(new String[]{apply.getApplyUserId(), apply.getContactId()});
+                lastMessage = apply.getApplyInfo();
+                contactName = apply.getContactName();
+                messageType = MessageTypeEnum.ADD_FRIEND.getType();
+            } else {
+                groupInfoDTO = groupInfoDubboService.getGroupInfo(apply.getContactId());
+                // 更新群组人数
+                groupInfoDubboService.addGroupMemberCount(apply.getContactId(), 1);
+                sessionId = StringTools.getChatSessionId4Group(apply.getContactId());
+                lastMessage = String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), apply.getApplyUserId());
+                contactName = apply.getContactName();
+                messageType = MessageTypeEnum.ADD_GROUP.getType();
+            }
+            // 4.2 创建会话
+            ChatSession chatSession = new ChatSession();
+            chatSession.setSessionId(sessionId);
+            chatSession.setLastReceiveTime(System.currentTimeMillis());
+            chatSession.setLastMessage(lastMessage);
+            sessionDubboService.addSession(chatSession);
+
+            redisComponet.addUserContact(apply.getApplyUserId(), apply.getContactId());
+
+            // 4.4 创建用户会话
+            ChatSessionUser chatSessionUser = new ChatSessionUser();
+            chatSessionUser.setSessionId(sessionId);
+            chatSessionUser.setUserId(apply.getApplyUserId());
+            chatSessionUser.setContactId(apply.getContactId());
+            chatSessionUser.setContactName(contactName);
+            sessionDubboService.addSessionUser(chatSessionUser);
+            if(ContactTypeEnum.USER.getStatus().equals(apply.getContactType())) {
+                // 4.4.1 若申请对象为用户，则还需要为对方创建会话
+                ChatSessionUser friendChatSessionUser = new ChatSessionUser();
+                friendChatSessionUser.setSessionId(sessionId);
+                friendChatSessionUser.setUserId(apply.getContactId());
+                friendChatSessionUser.setContactId(apply.getApplyUserId());
+                friendChatSessionUser.setContactName(UserContext.getNickName());
+                redisComponet.addUserContact(apply.getContactId(), apply.getApplyUserId());
+                sessionDubboService.addSessionUser(friendChatSessionUser);
+            }
+
+            // 4.5 增加聊天消息
+            ChatMessage chatMessage = new ChatMessage();
+            chatMessage.setSessionId(sessionId);
+            chatMessage.setMessageType(messageType);
+            chatMessage.setMessageContent(lastMessage);
+            chatMessage.setSendUserId(apply.getApplyUserId());
+            chatMessage.setSendUserNickName(contactUserInfoMapper.selectOne(
+                    new LambdaQueryWrapper<ContactUserInfo>()
+                            .eq(ContactUserInfo::getUserId, apply.getApplyUserId()))
+                    .getNickName());
+            chatMessage.setSendTime(System.currentTimeMillis());
+            chatMessage.setContactId(apply.getContactId());
+            chatMessage.setContactType(apply.getContactType());
+            chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus());
+            // 添加消息到数据库，接收返回的包含自增ID的chatMessage对象
+            chatMessage = sessionDubboService.addChatMessage(chatMessage);
+
+            // 4.6 向客户端发送消息
+            MessageSendDTO messageSendDTO = new MessageSendDTO();
+            BeanUtils.copyProperties(chatMessage, messageSendDTO);
+            messageSendDTO.setContactName(contactName);
+            messageSendDTO.setLastMessage(lastMessage);
+            if(groupInfoDTO != null){
+                // 将用户加入群组频道
+                sessionDubboService.addGroupToChannel(apply.getApplyUserId(), apply.getContactId());
+                messageSendDTO.setMemberCount(groupInfoDTO.getMemberCount() + 1);
+            }
+            kafkaMessageService.sendMessageToChannel(messageSendDTO);
+
+            if(ContactTypeEnum.USER.getStatus().equals(apply.getContactType())){
+                // 4.6.1 若申请对象为用户，则还需要给申请人发送消息
+                messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND_SELF.getType());
+                messageSendDTO.setContactId(apply.getReceiveUserId());
+//                messageSendDTO.setExtendData(userInfoDTO);
+                kafkaMessageService.sendMessageToChannel(messageSendDTO);
+            }
+
+
         } else if (status.equals(ContactApplyStatusEnum.REFUSE.getStatus())) {
             // 4.2 拒绝申请，无需后续处理
 

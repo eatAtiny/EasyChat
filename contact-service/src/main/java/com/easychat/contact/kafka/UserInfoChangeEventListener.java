@@ -1,9 +1,22 @@
 package com.easychat.contact.kafka;
 
+import cn.hutool.core.date.DateTime;
+import com.alibaba.nacos.shaded.org.checkerframework.checker.units.qual.C;
+import com.easychat.common.api.SessionDubboService;
+import com.easychat.common.constants.Constants;
+import com.easychat.common.entity.dto.MessageSendDTO;
+import com.easychat.common.entity.enums.ContactStatusEnum;
+import com.easychat.common.entity.enums.ContactTypeEnum;
+import com.easychat.common.entity.enums.MessageStatusEnum;
+import com.easychat.common.entity.enums.MessageTypeEnum;
 import com.easychat.common.entity.kafka.UserInfoMessage;
-import com.easychat.common.entity.po.ContactUserInfo;
+import com.easychat.common.entity.po.*;
+import com.easychat.common.utils.StringTools;
+import com.easychat.common.utils.UserContext;
+import com.easychat.contact.mapper.ContactMapper;
 import com.easychat.contact.mapper.ContactUserInfoMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +39,15 @@ public class UserInfoChangeEventListener {
 
     @Autowired
     private ContactUserInfoMapper contactUserInfoMapper;
+
+    @Autowired
+    private ContactMapper contactMapper;
+
+    @DubboReference(check = false)
+    private SessionDubboService sessionDubboService;
+
+    @Autowired
+    private KafkaMessageService kafkaMessageService;
     
     /**
      * 用户信息变更主题
@@ -84,6 +106,46 @@ public class UserInfoChangeEventListener {
         ContactUserInfo contactUserInfo = new ContactUserInfo();
         BeanUtils.copyProperties(event, contactUserInfo);
         contactUserInfoMapper.insert(contactUserInfo);
+
+        // 用户创建时默认添加机器人好友
+        Contact contact = new Contact();
+        contact.setUserId(contactUserInfo.getUserId());
+        contact.setContactId(Constants.ROBOT_ID);
+        contact.setContactType(ContactTypeEnum.USER.getStatus());
+        contact.setCreateTime(DateTime.now());
+        contact.setStatus(ContactStatusEnum.FRIEND.getStatus());
+        contact.setLastUpdateTime(DateTime.now());
+        contactMapper.insert(contact);
+
+        String sessionId = Constants.ROBOT_ID + UserContext.getUser();
+        // 创建会话
+        ChatSession chatSession = new ChatSession();
+        chatSession.setSessionId(sessionId);
+        chatSession.setLastReceiveTime(System.currentTimeMillis());
+        chatSession.setLastMessage("欢迎使用EasyChat");
+        sessionDubboService.addSession(chatSession);
+
+        // 4.4 创建用户会话
+        ChatSessionUser chatSessionUser = new ChatSessionUser();
+        chatSessionUser.setSessionId(sessionId);
+        chatSessionUser.setUserId(contact.getUserId());
+        chatSessionUser.setContactId(Constants.ROBOT_ID);
+        chatSessionUser.setContactName(Constants.ROBOT_NAME);
+        sessionDubboService.addSessionUser(chatSessionUser);
+
+        // 4.5 增加聊天消息
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(sessionId);
+        chatMessage.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+        chatMessage.setMessageContent("欢迎使用EasyChat");
+        chatMessage.setSendUserId(Constants.ROBOT_ID);
+        chatMessage.setSendUserNickName(Constants.ROBOT_NAME);
+        chatMessage.setSendTime(System.currentTimeMillis());
+        chatMessage.setContactId(contact.getUserId());
+        chatMessage.setContactType(contact.getContactType());
+        chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus());
+        // 添加消息到数据库，接收返回的包含自增ID的chatMessage对象
+        chatMessage = sessionDubboService.addChatMessage(chatMessage);
     }
 
     /**

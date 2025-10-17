@@ -13,7 +13,7 @@ public class KafkaMessageService {
     /**
      * 客户端消息主题
      */
-    private static final String MESSAGE_TO_CHANNEL_TOPIC = "message_to_channel_topic";
+    private static final String MESSAGE_TO_CHANNEL_TOPIC = "send-message-topic";
 
 
     @Autowired

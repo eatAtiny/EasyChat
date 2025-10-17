@@ -47,5 +47,15 @@ mybatis-plus:
 user-service:
   admin-emails: admin666@qq.com
 
+dubbo:
+  application:
+    name: dubbo-springboot-contact-both
+    logger: slf4j
+  registry:
+    address: nacos://172.23.80.100:8848
+  protocol:
+    name: dubbo
+    port: 20883
+
 server:
   port: 8082
