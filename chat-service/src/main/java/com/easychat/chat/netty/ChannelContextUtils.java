@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.easychat.chat.mapper.ChatMessageMapper;
 import com.easychat.chat.mapper.ChatSessionMapper;
 import com.easychat.chat.mapper.ChatSessionUserMapper;
+import com.easychat.common.api.ContactDubboService;
 import com.easychat.common.api.UserInfoDubboService;
 import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.MessageSendDTO;
@@ -17,12 +18,15 @@ import com.easychat.common.entity.po.ChatSessionUser;
 import com.easychat.common.entity.po.UserInfo;
 import com.easychat.common.utils.JsonUtils;
 import com.easychat.common.utils.RedisComponet;
+import com.easychat.common.utils.StringTools;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +35,16 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 @Component("channelContextUtils")
+@Slf4j
 public class ChannelContextUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelContextUtils.class);
 
     @Resource
     private RedisComponet redisComponet;
@@ -49,6 +55,10 @@ public class ChannelContextUtils {
 
     @DubboReference(check = false)
     private UserInfoDubboService userInfoDubboService;
+
+    @DubboReference(check = false)
+    private ContactDubboService contactDubboService;
+
     @Autowired
     private ChatSessionMapper chatSessionMapper;
 
@@ -86,72 +96,45 @@ public class ChannelContextUtils {
             USER_CONTEXT_MAP.put(userId, channel);
             redisComponet.saveUserHeartBeat(userId);
 
-            //更新用户最后连接时间
-            userInfoDubboService.updateUserLastLoginTime(userId, System.currentTimeMillis());
-
             //给用户发送一些消息
             //获取用户最后离线时间
             Long sourceLastOffTime = userInfoDubboService.getUserLastOffTime(userId);
+            System.out.println("sourceLastOffTime = " + sourceLastOffTime);
             //这里避免毫秒时间差，所以减去1秒的时间
             //如果时间太久，只取最近三天的消息数
             Long lastOffTime = sourceLastOffTime;
             if (sourceLastOffTime != null && System.currentTimeMillis() - Constants.MILLISECOND_3DAYS_AGO > sourceLastOffTime) {
                 lastOffTime = System.currentTimeMillis() - Constants.MILLISECOND_3DAYS_AGO;
             }
-
+            System.out.println("lastOffTime = " + lastOffTime);
             /**
              * 1、查询会话信息 查询用户所有会话，避免换设备会话不同步
              */
-//            ChatSessionUserQuery sessionUserQuery = new ChatSessionUserQuery();
-//            sessionUserQuery.setUserId(userId);
-//            sessionUserQuery.setOrderBy("last_receive_time desc");
-//            List<ChatSessionUser> chatSessionList = chatSessionUserMapper.selectList(sessionUserQuery);
-
-            List<ChatSessionUser> chatSessionList = chatSessionUserMapper.selectList(
-                    new LambdaQueryWrapper<ChatSessionUser>()
-                            .eq(ChatSessionUser::getUserId, userId)
-                            .orderByDesc(ChatSessionUser::getLastReceiveTime)
-            );
+            List<ChatSessionUser> chatSessionList = chatSessionUserMapper.selectListByUserId(userId);
             WsInitDataDTO wsInitDataDTO = new WsInitDataDTO();
             wsInitDataDTO.setChatSessionList(chatSessionList);
 
             /**
              * 2、查询聊天消息
              */
-//            //查询用户的联系人
-//            UserContactQuery contactQuery = new UserContactQuery();
-//            contactQuery.setContactType(UserContactTypeEnum.GROUP.getType());
-//            contactQuery.setUserId(userId);
-//            List<UserContact> groupContactList = userContactMapper.selectList(contactQuery);
-//            List<String> groupIdList = groupContactList.stream().map(item -> item.getContactId()).collect(Collectors.toList());
-//            //将自己也加进去
-//            groupIdList.add(userId);
-
-            // TODO 这里查询所有会话的消息，可能需要联合查询会话用户表，或者修改会话表
-//            List<ChatMessage> chatMessageList = chatMessageMapper.selectList(
-//                    new LambdaQueryWrapper<ChatMessage>()
-//                            .in(ChatMessage::getContactId, groupIdList)
-//                            .orderByDesc(ChatMessage::getCreateTime)
-//            );
-//
-//            ChatMessageQuery messageQuery = new ChatMessageQuery();
-//            messageQuery.setContactIdList(groupIdList);
-//            messageQuery.setLastReceiveTime(lastOffTime);
-//            List<ChatMessage> chatMessageList = chatMessageMapper.selectList(messageQuery);
-//            wsInitData.setChatMessageList(chatMessageList);
-            wsInitDataDTO.setChatMessageList(new ArrayList<>());
-//
-//            /**
-//             * 3、查询好友申请
-//             */
-//            UserContactApplyQuery applyQuery = new UserContactApplyQuery();
-//            applyQuery.setReceiveUserId(userId);
-//            applyQuery.setLastApplyTimestamp(sourceLastOffTime);
-//            applyQuery.setStatus(UserContactApplyStatusEnum.INIT.getStatus());
-//            Integer applyCount = userContactApplyMapper.selectCount(applyQuery);
-//            wsInitData.setApplyCount(applyCount);
-//
-            wsInitDataDTO.setApplyCount(0);
+            // 将用户所在群组，和接收对象为本人的消息，查询出来
+            // 获取群组Id
+            List<String> groupIdList = contactDubboService.getGroupIdList(userId);
+            //将自己也加进去
+            groupIdList.add(userId);
+            //查询用户的聊天消息
+            List<ChatMessage> chatMessageList = chatMessageMapper.selectList(
+                    new LambdaQueryWrapper<ChatMessage>()
+                            .in(ChatMessage::getContactId, groupIdList)
+                            .gt(ChatMessage::getSendTime, lastOffTime)
+                            .orderByDesc(ChatMessage::getSendTime)
+            );
+            wsInitDataDTO.setChatMessageList(chatMessageList);
+            /**
+             * 3、查询好友申请
+             */
+            int applyCount = contactDubboService.countFriendApply(userId, lastOffTime);
+            wsInitDataDTO.setApplyCount(applyCount);
             //发送消息
             MessageSendDTO messageSendDTO = new MessageSendDTO();
             messageSendDTO.setMessageType(MessageTypeEnum.INIT.getType());
@@ -160,7 +143,7 @@ public class ChannelContextUtils {
 
             sendMsg(messageSendDTO, userId);
         } catch (Exception e) {
-            logger.error("初始化链接失败", e);
+            log.error("初始化链接失败", e);
         }
     }
 
@@ -170,17 +153,15 @@ public class ChannelContextUtils {
      * @param channel
      */
     public void removeContext(Channel channel) {
-//        Attribute<String> attribute = channel.attr(AttributeKey.valueOf(channel.id().toString()));
-//        String userId = attribute.get();
-//        if (!StringTools.isEmpty(userId)) {
-//            USER_CONTEXT_MAP.remove(userId);
-//        }
-//        redisComponet.removeUserHeartBeat(userId);
-//
-//        //更新用户最后断线时间
-//        UserInfo userInfo = new UserInfo();
-//        userInfo.setLastOffTime(System.currentTimeMillis());
-//        userInfoMapper.updateByUserId(userInfo, userId);
+        Attribute<String> attribute = channel.attr(AttributeKey.valueOf(channel.id().toString()));
+        String userId = attribute.get();
+        if (!StringTools.isEmpty(userId)) {
+            USER_CONTEXT_MAP.remove(userId);
+        }
+        redisComponet.removeUserHeartBeat(userId);
+
+        //更新用户最后断线时间
+        userInfoDubboService.updateUserLastOffTime(userId, System.currentTimeMillis());
     }
 
     public void closeContext(String userId) {
@@ -228,6 +209,7 @@ public class ChannelContextUtils {
 
         ChannelGroup group = GROUP_CONTEXT_MAP.get(messageSendDTO.getContactId());
         if (group == null) {
+            log.info("群聊{}不存在，消息发送失败", messageSendDTO.getContactId());
             return;
         }
         group.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(messageSendDTO)));
@@ -261,11 +243,24 @@ public class ChannelContextUtils {
         }
         //相当于客户而言，联系人就是发送人，所以这里转换一下再发送,好友打招呼信息发送给自己需要特殊处理
         if (MessageTypeEnum.ADD_FRIEND_SELF.getType().equals(messageSendDTO.getMessageType())) {
-            UserInfo userInfo = (UserInfo) messageSendDTO.getExtendData();
-            messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
-            messageSendDTO.setContactId(userInfo.getUserId());
-            messageSendDTO.setContactName(userInfo.getNickName());
-            messageSendDTO.setExtendData(null);
+            Object extendData = messageSendDTO.getExtendData();
+            String userId = null;
+            String nickName = null;
+
+            if (extendData instanceof LinkedHashMap) {
+                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) extendData;
+                userId = (String) map.get("userId");
+                nickName = (String) map.get("nickName");
+            }
+            if (userId != null && nickName != null) {
+                messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+                messageSendDTO.setContactId(userId);
+                messageSendDTO.setContactName(nickName);
+                messageSendDTO.setExtendData(null);
+            } else {
+                log.warn("无法从extendData中提取userId和nickName: {}", extendData);
+                return;
+            }
         } else {
             messageSendDTO.setContactId(messageSendDTO.getSendUserId());
             messageSendDTO.setContactName(messageSendDTO.getSendUserNickName());

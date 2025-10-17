@@ -58,7 +58,7 @@ dubbo:
     address: nacos://172.23.80.100:8848
   protocol:
     name: dubbo
-    port: 20880
+    port: 20884
   scan:
     base-packages:
       - com.easychat.chat.dubbo

@@ -1,13 +1,16 @@
 package com.easychat.common.entity.dto;
 import lombok.Data;
+import org.apache.dubbo.common.logger.FluentLogger;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
-public class UserInfoDTO {
+public class UserInfoDTO implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     /**
      * 用户ID
      */

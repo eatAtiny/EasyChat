@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easychat.chat.mapper.ChatSessionUserMapper">
+    <select id="selectListByUserId" resultType="com.easychat.common.entity.po.ChatSessionUser">
+        select su.*, s.last_message as lastMessage, s.last_receive_time as lastReceiveTime,
+               case when LEFT(su.contact_id, 1) = 'U' then 0 else 1 end as contactType
+        from chat_session_user su left join chat_session s on s.session_id=su.session_id
+        where su.user_id = #{userId}
+    </select>
+</mapper>

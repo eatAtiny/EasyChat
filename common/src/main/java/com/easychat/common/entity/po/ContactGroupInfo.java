@@ -1,5 +1,6 @@
 package com.easychat.common.entity.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
@@ -14,7 +15,7 @@ public class ContactGroupInfo implements Serializable {
     /**
      * 群ID
      */
-    @TableId
+    @TableId(type = IdType.INPUT)
     private String groupId;
 
     /**

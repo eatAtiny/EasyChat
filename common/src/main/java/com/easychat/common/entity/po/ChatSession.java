@@ -1,5 +1,7 @@
 package com.easychat.common.entity.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,6 +17,7 @@ public class ChatSession implements Serializable {
     /**
      * 会话ID
      */
+    @TableId(type = IdType.INPUT)
     private String sessionId;
 
     /**

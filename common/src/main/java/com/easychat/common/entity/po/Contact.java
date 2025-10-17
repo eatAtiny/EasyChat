@@ -1,6 +1,9 @@
 package com.easychat.common.entity.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.easychat.common.entity.enums.DateTimePatternEnum;
 import com.easychat.common.utils.DateUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -15,6 +18,7 @@ import java.util.Date;
  * 联系人
  */
 @Data
+@TableName("contact")
 public class Contact implements Serializable {
 
 

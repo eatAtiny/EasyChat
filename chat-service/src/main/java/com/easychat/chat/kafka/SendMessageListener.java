@@ -25,7 +25,7 @@ public class SendMessageListener {
      * @param record Kafka消息记录
      * @param acknowledgment 确认对象
      */
-    @KafkaListener(topics = SEND_MESSAGE_TOPIC, groupId = "chat-service-group")
+    @KafkaListener(topics = SEND_MESSAGE_TOPIC, groupId = "message_to_channel_topic")
     public void handleSendMessage(ConsumerRecord<String, MessageSendDTO> record, Acknowledgment acknowledgment) {
         try {
             MessageSendDTO event = record.value();

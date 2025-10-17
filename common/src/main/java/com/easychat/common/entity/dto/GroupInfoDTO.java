@@ -13,7 +13,7 @@ import java.io.Serializable;
 @Data
 public class GroupInfoDTO implements Serializable {
 
-
+    private static final long serialVersionUID = 1L;
     /**
      * 群ID
      */

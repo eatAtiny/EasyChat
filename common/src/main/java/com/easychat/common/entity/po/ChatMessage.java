@@ -1,5 +1,9 @@
 package com.easychat.common.entity.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.github.classgraph.json.Id;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -9,12 +13,14 @@ import java.io.Serializable;
  * 聊天消息表
  */
 @Data
+@TableName("chat_message")
 public class ChatMessage implements Serializable {
 
 
     /**
      * 消息自增ID
      */
+    @TableId(type = IdType.AUTO)
     private Long messageId;
 
     /**

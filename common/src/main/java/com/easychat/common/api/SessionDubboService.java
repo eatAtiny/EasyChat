@@ -15,7 +15,21 @@ public interface SessionDubboService {
     boolean addSessionUser(ChatSessionUser chatSessionUser);
 
     /**
-     * 添加聊天信息
+     * 更新会话用户
+     * @param chatSessionUser 会话用户
+     * @return 是否更新成功
      */
-     boolean addChatMessage(ChatMessage chatMessage);
+    boolean updateSessionUser(ChatSessionUser chatSessionUser);
+
+    /**
+     * 添加聊天信息
+     * @param chatMessage 聊天消息对象
+     * @return 包含自增ID的聊天消息对象
+     */
+     ChatMessage addChatMessage(ChatMessage chatMessage);
+
+    /**
+     * 将用户添加进channelGroup
+     */
+    void addGroupToChannel(String userId, String groupId);
 }

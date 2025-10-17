@@ -3,12 +3,21 @@ package com.easychat.group.service.impl;
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.easychat.common.api.ContactDubboService;
+import com.easychat.common.api.SessionDubboService;
 import com.easychat.common.config.AvatarConfig;
+import com.easychat.common.entity.dto.MessageSendDTO;
+import com.easychat.common.entity.enums.MessageStatusEnum;
+import com.easychat.common.entity.enums.MessageTypeEnum;
 import com.easychat.common.entity.kafka.GroupInfoMessage;
+import com.easychat.common.entity.po.ChatMessage;
+import com.easychat.common.entity.po.ChatSession;
+import com.easychat.common.entity.po.ChatSessionUser;
 import com.easychat.common.exception.BusinessException;
+import com.easychat.common.utils.CopyTools;
+import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.utils.UserContext;
-import com.easychat.group.api.ContactClient;
 import com.easychat.group.constant.Constants;
 import com.easychat.common.entity.dto.GroupInfoDTO;
 import com.easychat.common.entity.dto.GroupManageDTO;
@@ -21,6 +30,8 @@ import com.easychat.group.mapper.GroupInfoMapper;
 import com.easychat.group.service.GroupInfoService;
 import com.easychat.group.kafka.KafkaMessageService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,15 +44,20 @@ import java.nio.file.Path;
 
 @Service
 public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo> implements GroupInfoService {
-
-    @Autowired
-    private ContactClient contactClient;
     
     @Autowired
     private KafkaMessageService kafkaMessageService;
 
     @Autowired
     private AvatarConfig avatarConfig;
+    @Autowired
+    private RedisComponet redisComponet;
+
+    @DubboReference(check = false)
+    private SessionDubboService sessionDubboService;
+
+    @DubboReference(check = false)
+    private ContactDubboService contactDubboService;
 
 
 
@@ -76,8 +92,49 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             
             // 1.3 将自己加入群聊
             manageGroupContact(groupInfo.getGroupOwnerId(), groupInfo.getGroupId(), ContactStatusEnum.FRIEND.getStatus());
-            // 1.4 TODO 创建会话
-            // 1.5 TODO 创建消息
+            redisComponet.addUserContact(groupInfo.getGroupOwnerId(), groupInfo.getGroupId());
+            // 1.4 创建会话
+            String sessionId = StringTools.getChatSessionId4Group(groupInfo.getGroupId());
+            ChatSession chatSession = new ChatSession();
+            chatSession.setSessionId(sessionId);
+            chatSession.setLastMessage(MessageTypeEnum.GROUP_CREATE.getInitMessage());
+            chatSession.setLastReceiveTime(DateTime.now().getTime());
+            sessionDubboService.addSession(chatSession);
+
+            //创建群主会话
+            ChatSessionUser chatSessionUser = new ChatSessionUser();
+            chatSessionUser.setUserId(groupInfo.getGroupOwnerId());
+            chatSessionUser.setContactId(groupInfo.getGroupId());
+            chatSessionUser.setContactType(ContactTypeEnum.GROUP.getStatus());
+            chatSessionUser.setContactName(groupInfo.getGroupName());
+            chatSessionUser.setSessionId(sessionId);
+            sessionDubboService.addSessionUser(chatSessionUser);
+
+            // 1.5 创建消息
+            ChatMessage chatMessage = new ChatMessage();
+            chatMessage.setSessionId(sessionId);
+            chatMessage.setMessageType(MessageTypeEnum.GROUP_CREATE.getType());
+            chatMessage.setMessageContent(MessageTypeEnum.GROUP_CREATE.getInitMessage());
+            chatMessage.setSendUserId(null);
+            chatMessage.setSendUserNickName(null);
+            chatMessage.setSendTime(DateTime.now().getTime());
+            chatMessage.setContactId(groupInfo.getGroupId());
+            chatMessage.setContactType(ContactTypeEnum.GROUP.getStatus());
+            chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus());
+            // 添加消息到数据库，接收返回的包含自增ID的chatMessage对象
+            chatMessage = sessionDubboService.addChatMessage(chatMessage);
+            // 1.6 将群聊加入channelGroup
+            sessionDubboService.addGroupToChannel(groupInfo.getGroupOwnerId(), groupInfo.getGroupId());
+
+            // 发送ws消息
+            chatSessionUser.setLastMessage(MessageTypeEnum.GROUP_CREATE.getInitMessage());
+            chatSessionUser.setLastReceiveTime(chatMessage.getSendTime());
+            chatSessionUser.setMemberCount(1);
+
+            MessageSendDTO messageSend = CopyTools.copy(chatMessage, MessageSendDTO.class);
+            messageSend.setExtendData(chatSessionUser);
+            messageSend.setLastMessage(chatSessionUser.getLastMessage());
+            kafkaMessageService.sendWsMessage(messageSend);
 
         }else// 2. 群号不为空 修改群聊信息
         {
@@ -103,7 +160,21 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             event.setGroupNotice(groupInfo.getGroupNotice());
             kafkaMessageService.sendGroupInfoChangeEvent(event);
             
-            // 2.4 TODO 更新会话
+            // 2.4 更新会话
+            ChatSessionUser chatSessionUser = new ChatSessionUser();
+            chatSessionUser.setUserId(groupInfo.getGroupOwnerId());
+            chatSessionUser.setContactId(groupInfo.getGroupId());
+            chatSessionUser.setContactName(groupInfo.getGroupName());
+            sessionDubboService.updateSessionUser(chatSessionUser);
+            // 发送ws消息
+            MessageSendDTO messageSendDto = new MessageSendDTO();
+            messageSendDto.setContactType(ContactTypeEnum.GROUP.getStatus());
+            messageSendDto.setContactId(groupInfo.getGroupId());
+            messageSendDto.setExtendData(groupInfo.getGroupName());
+            messageSendDto.setMessageType(MessageTypeEnum.CONTACT_NAME_UPDATE.getType());
+            kafkaMessageService.sendWsMessage(messageSendDto);
+
+
 
         }
         // 3. 处理头像
@@ -155,7 +226,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         searchResultVO.setContactType(ContactTypeEnum.GROUP.getName());
         searchResultVO.setNickName(groupInfo.getGroupName());
         // 2. 查询群聊关系
-        ContactDTO contactDTO = contactClient.getContactInfo(groupId);
+        ContactDTO contactDTO = contactDubboService.getContactInfo(UserContext.getUser(), groupId);
         if (contactDTO != null) {
             searchResultVO.setStatus(contactDTO.getStatus());
             searchResultVO.setStatusName(ContactStatusEnum.getDescByStatus(contactDTO.getStatus()));
@@ -270,7 +341,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         contactDTO.setCreateTime(DateTime.now());
         contactDTO.setLastUpdateTime(DateTime.now());
         contactDTO.setStatus(ContactStatusEnum.FRIEND.getStatus());
-        contactClient.createContact(contactDTO);
+        contactDubboService.createContact(contactDTO);
         // 2. 更新群聊成员数量
         if (contactType == ContactStatusEnum.DEL_FRIEND.getStatus()) {
             // 2.1.2 移除成员

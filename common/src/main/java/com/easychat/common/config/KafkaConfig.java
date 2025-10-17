@@ -99,7 +99,7 @@ public class KafkaConfig {
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
         // 配置反序列化信任的包路径
-        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.easychat.common.entity.kafka");
+        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.easychat.common.entity.kafka,com.easychat.common.entity.dto");
         // 无偏移量时从最早消息开始消费
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // 自动提交偏移量

@@ -14,9 +14,9 @@ spring:
     # Kafka服务器地址
     bootstrap-servers: 172.23.80.100:9094
     # 消费者配置
-    consumer:
-      # 消费者组ID
-      group-id: group-service-group
+#    consumer:
+#      # 消费者组ID
+#      group-id: group-service-group
 redisson:
   address: "redis://172.23.80.100:6379"
 
@@ -41,11 +41,25 @@ mybatis-plus:
 
 user-service:
   admin-emails: admin666@qq.com
-server:
-  port: 8083
 easychat:
   avatar:
     path: avatar
     suffix: .jpg
     cover_path: avatar/cover
     cover_suffix: _cover.jpg
+
+dubbo:
+  application:
+    name: dubbo-springboot-group-both
+    logger: slf4j
+  registry:
+    address: nacos://172.23.80.100:8848
+  protocol:
+    name: dubbo
+    port: 20882
+  scan:
+    base-packages:
+      - com.easychat.group.dubbo
+      - com.easychat.group.controller
+server:
+  port: 8083

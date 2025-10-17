@@ -2,9 +2,12 @@ package com.easychat.common.entity.dto;
 
 import lombok.Data;
 
-@Data
-public class ManageGroupDTO {
+import java.io.Serializable;
 
+@Data
+public class ManageGroupDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /**
      * 群聊ID
      */

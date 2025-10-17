@@ -1,5 +1,7 @@
 package com.easychat.chat.dubbo;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.easychat.chat.netty.ChannelContextUtils;
 import com.easychat.chat.service.ChatMessageService;
 import com.easychat.chat.service.ChatSessionService;
 import com.easychat.chat.service.ChatSessionUserService;
@@ -22,13 +24,18 @@ public class SessionDubboServiceImpl implements SessionDubboService {
     private ChatSessionUserService chatSessionUserService;
     @Resource
     private ChatMessageService chatMessageService;
+    @Resource
+    private ChannelContextUtils channelContextUtils;
 
     /**
      * 添加会话
      */
     @Override
     public boolean addSession(ChatSession chatSession) {
-        chatSessionService.saveOrUpdate(chatSession);
+        // 按sessionId条件保存
+        QueryWrapper<ChatSession> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("session_id", chatSession.getSessionId());
+        chatSessionService.saveOrUpdate(chatSession, queryWrapper);
         return true;
     }
      /**
@@ -36,7 +43,25 @@ public class SessionDubboServiceImpl implements SessionDubboService {
       */
     @Override
     public boolean addSessionUser(ChatSessionUser chatSessionUser) {
-        chatSessionUserService.saveOrUpdate(chatSessionUser);
+        // 按userId和contactId联合主键条件保存
+        QueryWrapper<ChatSessionUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", chatSessionUser.getUserId())
+                   .eq("contact_id", chatSessionUser.getContactId());
+        chatSessionUserService.saveOrUpdate(chatSessionUser, queryWrapper);
+        return true;
+    }
+
+     /**
+      * 更新会话用户
+      * @param chatSessionUser 会话用户
+      * @return 是否更新成功
+      */
+    @Override
+    public boolean updateSessionUser(ChatSessionUser chatSessionUser) {
+        // 按userId和contactId联合主键条件更新
+        QueryWrapper<ChatSessionUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("contact_id", chatSessionUser.getContactId());
+        chatSessionUserService.update(chatSessionUser, queryWrapper);
         return true;
     }
 
@@ -44,8 +69,16 @@ public class SessionDubboServiceImpl implements SessionDubboService {
      * 添加聊天信息
      */
      @Override
-    public boolean addChatMessage(ChatMessage chatMessage) {
+    public ChatMessage addChatMessage(ChatMessage chatMessage) {
         chatMessageService.save(chatMessage);
-        return true;
+        return chatMessage; // 返回包含自增ID的chatMessage对象
+    }
+
+    /**
+     * 将新建群组添加进channelGroup
+     */
+    @Override
+    public void addGroupToChannel(String userId, String groupId){
+        channelContextUtils.addUserToGroup(userId, groupId);
     }
 }
