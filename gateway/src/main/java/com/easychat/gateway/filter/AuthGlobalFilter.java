@@ -23,6 +23,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -82,10 +84,11 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             DataBuffer buffer = bufferFactory.wrap(message.getBytes());
             return response.writeWith(Mono.just(buffer));
         }
-        // 5.如果有效，传递用户信息
+        // 5.如果有效，传递用户信息 - 注意：中文昵称需要进行URL编码，避免请求头乱码
+        String encodedNickName = URLEncoder.encode(tokenUserInfoDTO.getNickName(), StandardCharsets.UTF_8);
         ServerWebExchange ex = exchange.mutate()
                 .request(builder -> builder.header(Constants.USER_ID, tokenUserInfoDTO.getUserId()))
-                .request(builder -> builder.header(Constants.USER_NICK_NAME, tokenUserInfoDTO.getNickName()))
+                .request(builder -> builder.header(Constants.USER_NICK_NAME, encodedNickName))
                 .build();
         System.out.println("userId = " + tokenUserInfoDTO.getUserId());
         // 6.放行
