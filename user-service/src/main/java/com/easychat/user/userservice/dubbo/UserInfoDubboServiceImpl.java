@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.api.UserInfoDubboService;
+import com.easychat.common.entity.dto.UserInfoDTO;
 import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.common.entity.po.UserInfo;
 import com.easychat.user.userservice.service.UserInfoService;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,17 @@ public class UserInfoDubboServiceImpl implements UserInfoDubboService {
     }
 
     @Override
+    public UserInfoDTO getUserInfo(String userId) {
+        UserInfoDTO userInfoDTO = new UserInfoDTO();
+        UserInfo userInfo = userInfoService.getOne(Wrappers.<UserInfo>lambdaQuery()
+                .eq(UserInfo::getUserId, userId));
+        if (userInfo != null) {
+            BeanUtils.copyProperties(userInfo, userInfoDTO);
+        }
+        return userInfoDTO;
+    }
+
+    @Override
     public Boolean updateUserStatus(String userId, Integer status) {
         return userInfoService.update(Wrappers.<UserInfo>lambdaUpdate()
                 .eq(UserInfo::getUserId, userId)
@@ -54,14 +67,14 @@ public class UserInfoDubboServiceImpl implements UserInfoDubboService {
      * 调用者可以继续执行其他操作，等更新完成后通过CompletableFuture获取结果。
      *
      * @param userId       用户ID
-     * @param lastLoginTime 最后登录时间
+     * @param lastOffTime 最后离开时间
      * @return 更新结果
      */
     @Override
-    public CompletableFuture<Boolean> updateUserLastLoginTime(String userId, Long lastLoginTime) {
+    public CompletableFuture<Boolean> updateUserLastOffTime(String userId, Long lastOffTime) {
         return CompletableFuture.supplyAsync(()->userInfoService.update(Wrappers.<UserInfo>lambdaUpdate()
                 .eq(UserInfo::getUserId, userId)
-                .set(UserInfo::getLastLoginTime, lastLoginTime)));
+                .set(UserInfo::getLastOffTime, lastOffTime)));
     }
 
      /**

@@ -156,11 +156,10 @@ public class UserController extends BaseController {
      * @return 用户信息
      */
     @ApiOperation("获取用户信息")
-    @GetMapping("")
-    public ResponseVO getUserInfo() {
+    @GetMapping("/{userId}")
+    public ResponseVO getUserInfo(@PathVariable("userId") String userId) {
         // 打印用户ID，用于调试
-        String userId = UserContext.getUser();
-        System.out.println("UserController getUserInfo - UserContext userId: " + userId);
+        System.out.println("UserController getUserInfo - userId: " + userId);
         
         UserInfo userInfo = userInfoService.getById(userId);
         return getSuccessResponseVO(userInfo);

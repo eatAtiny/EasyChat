@@ -1,8 +1,10 @@
 package com.easychat.user.userservice.service.impl;
 
 import cn.hutool.core.date.DateTime;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.easychat.common.api.ContactDubboService;
 import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.exception.BusinessException;
 
@@ -11,7 +13,6 @@ import com.easychat.common.utils.StringTools;
 import com.easychat.common.entity.dto.TokenUserInfoDTO;
 import com.easychat.common.entity.kafka.UserInfoMessage;
 import com.easychat.common.utils.UserContext;
-import com.easychat.user.userservice.api.ContactClient;
 import com.easychat.user.userservice.config.UserServiceConfig;
 import com.easychat.user.userservice.constant.Constants;
 import com.easychat.common.entity.dto.ContactDTO;
@@ -28,6 +29,7 @@ import com.easychat.user.userservice.mapper.UserInfoBeautyMapper;
 import com.easychat.user.userservice.mapper.UserInfoMapper;
 import com.easychat.user.userservice.service.UserInfoService;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.jboss.marshalling.TraceInformation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -55,8 +57,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     @Autowired
     private UserServiceConfig userServiceConfig;
 
-    @Autowired
-    private ContactClient contactClient;
+    @DubboReference(check = false)
+    private ContactDubboService contactDubboService;
     
     @Autowired
     private KafkaMessageService kafkaMessageService;
@@ -69,6 +71,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
      * @param userFormDTO 用户注册信息
      */
     @Override
+    @Transactional
     public void register(UserFormDTO userFormDTO) {
         // 1. 查看用户是否存在
         UserInfo userInfo = baseMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, userFormDTO.getEmail()));
@@ -105,15 +108,11 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         userInfo.setLastOffTime(DateTime.now().getTime());
         baseMapper.insert(userInfo);
         
-        // 发送用户创建事件到Kafka
+        // 发送用户创建事件到Kafka，并添加机器人好友
         UserInfoMessage event = new UserInfoMessage();
         BeanUtils.copyProperties(userInfo, event);
         event.setEventType(UserInfoMessage.EventType.CREATE);
         kafkaMessageService.sendUserInfoChangeEvent(event);
-        
-        // 4. TODO 添加机器人好友
-
-
     }
 
     @Override
@@ -142,9 +141,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         userInfo.setLastLoginTime(DateTime.now());
         baseMapper.updateById(userInfo);
 
-        // 2. 加载用户信息
-        // 2.1 TODO 加载群聊
-        // 2.2 TODO 加载好友
+        // 2. 将用户联系人添加到redis中
+        contactDubboService.addContactsToRedis(tokenUserInfoDTO.getUserId());
 
 
         // 3. 生成token,将用户信息保存到redis
@@ -195,7 +193,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         searchResultVO.setContactId(contactId);
         searchResultVO.setContactType(ContactTypeEnum.USER.getName());
         // 2. 获取用户关系信息
-        ContactDTO contactDTO = contactClient.getContactInfo(contactId);
+        ContactDTO contactDTO = contactDubboService.getContactInfo(UserContext.getUser(), contactId);
         if (contactDTO != null) {
             searchResultVO.setStatus(contactDTO.getStatus());
             searchResultVO.setStatusName(ContactStatusEnum.getDescByStatus(contactDTO.getStatus()));
