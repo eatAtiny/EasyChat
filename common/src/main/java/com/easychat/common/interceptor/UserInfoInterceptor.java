@@ -9,6 +9,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
 @Slf4j
@@ -27,9 +29,17 @@ public class UserInfoInterceptor implements HandlerInterceptor {
         }
         log.info("UserInfoInterceptor preHandle - 所有请求头: {}", headersInfo.toString());
         
-        // 2.获取请求头中的用户信息
+        // 2.获取请求头中的用户信息 - 注意：中文昵称需要进行URL解码
         String userInfo = request.getHeader(Constants.USER_ID);
         String nickName = request.getHeader(Constants.USER_NICK_NAME);
+        // 对URL编码的昵称进行解码
+        if (StrUtil.isNotBlank(nickName)) {
+            try {
+                nickName = URLDecoder.decode(nickName, StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                log.warn("UserInfoInterceptor preHandle - 昵称解码失败: {}", e.getMessage());
+            }
+        }
         log.info("UserInfoInterceptor preHandle - userInfo: {}, nickName: {}", userInfo, nickName);
         
         // 3.判断是否为空
