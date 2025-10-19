@@ -16,5 +16,19 @@
         order by 
             ca.last_apply_time desc
     </select>
+
+
+     <select id="selectByApplyId" resultType="com.easychat.common.entity.po.ContactApply">
+        select
+            ca.*,
+            ui.nick_name as contact_name
+        from
+            contact_apply ca
+        left join
+            contact_user_info ui on ca.apply_user_id = ui.user_id
+        where
+            ca.apply_id = #{applyId}
+    </select>
+
     
 </mapper>

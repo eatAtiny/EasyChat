@@ -15,4 +15,11 @@ public interface ContactApplyMapper extends BaseMapper<ContactApply> {
      * @return 申请列表
      */
     List<ContactApply> selectApplyListWithUserInfo(String receiveUserId);
+
+    /**
+     * 根据applyId查询申请详情，联合查询用户信息
+     * @param applyId 申请ID
+     * @return 申请详情
+     */
+    ContactApply selectByApplyId(Integer applyId);
 }

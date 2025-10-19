@@ -11,6 +11,7 @@ public class Constants {
     // 错误信息
     public static final String GROUP_NOT_EXIST = "群聊不存在";
     public static final String USER_NOT_EXIST = "用户不存在";
+    public static final String CONTACT_USER_STATUS_FRIEND = "用户已是好友";
     public static final String GROUP_EXIST = "群聊已存在";
     public static final String GROUP_NUM_EXCEED = "群聊数量已达上限";
     public static final String GROUP_OWNER_ERROR = "群主信息错误";
@@ -31,14 +32,6 @@ public class Constants {
 
     // 群聊状态
     public static final Integer GROUP_STATUS_DISSOLUTION = 0;  // 解散
-
-    // 联系人状态
-    public static final Integer CONTACT_USER_STATUS_NOT_FRIEND = 0;  // 非好友
-    public static final Integer CONTACT_USER_STATUS_FRIEND = 1;  // 好友
-    public static final Integer CONTACT_USER_STATUS_DELETE_FRIEND = 2; // 已删除好友
-    public static final Integer CONTACT_USER_STATUS_DELETED_BY_FRIEND = 3; // 被好友删除
-    public static final Integer CONTACT_USER_STATUS_BLOCK_FRIEND = 4; // 已拉黑好友
-    public static final Integer CONTACT_USER_STATUS_BLOCKED_BY_FRIEND = 5; // 被好友拉黑
 
     // 联系人申请权限
     public static final Integer CONTACT_APPLY_PERMISSION_DIRECT = 0; // 直接加入

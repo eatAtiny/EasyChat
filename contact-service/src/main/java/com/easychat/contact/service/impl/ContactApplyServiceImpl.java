@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.websocket.Session;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -77,6 +78,9 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
         // 2. 检查是否被拉黑
         if (contact != null && contact.getStatus().equals(ContactStatusEnum.BLOCK_FRIEND.getStatus())){
             throw new BusinessException(Constants.CONTACT_USER_STATUS_BLOCKED);
+        }
+        if (contact != null && contact.getStatus().equals(ContactStatusEnum.FRIEND.getStatus())){
+            throw new BusinessException(Constants.CONTACT_USER_STATUS_FRIEND);
         }
         // 3. 检查用户/群组是否存在
         Integer joinType =null;
@@ -270,7 +274,7 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
     @Transactional(rollbackFor = Exception.class)
     public void dealWithApply(Integer applyId, Integer status) {
         // 1. 校验申请是否存在
-        ContactApply apply = baseMapper.selectById(applyId);
+        ContactApply apply = baseMapper.selectByApplyId(applyId);
         if (apply == null) {
             throw new BusinessException(Constants.APPLY_NOT_EXIST);
         }
@@ -330,9 +334,10 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             chatSessionUser.setContactId(apply.getContactId());
             chatSessionUser.setContactName(contactName);
             sessionDubboService.addSessionUser(chatSessionUser);
+            ChatSessionUser friendChatSessionUser = null;
             if(ContactTypeEnum.USER.getStatus().equals(apply.getContactType())) {
                 // 4.4.1 若申请对象为用户，则还需要为对方创建会话
-                ChatSessionUser friendChatSessionUser = new ChatSessionUser();
+                friendChatSessionUser = new ChatSessionUser();
                 friendChatSessionUser.setSessionId(sessionId);
                 friendChatSessionUser.setUserId(apply.getContactId());
                 friendChatSessionUser.setContactId(apply.getApplyUserId());
@@ -373,8 +378,11 @@ public class ContactApplyServiceImpl extends ServiceImpl<ContactApplyMapper, Con
             if(ContactTypeEnum.USER.getStatus().equals(apply.getContactType())){
                 // 4.6.1 若申请对象为用户，则还需要给申请人发送消息
                 messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND_SELF.getType());
-                messageSendDTO.setContactId(apply.getReceiveUserId());
-//                messageSendDTO.setExtendData(userInfoDTO);
+                messageSendDTO.setContactId(apply.getApplyUserId());
+                HashMap<String,String> hashMap = new HashMap<>();
+                hashMap.put("userId", userInfoDTO.getUserId());
+                hashMap.put("nickName", userInfoDTO.getNickName());
+                messageSendDTO.setExtendData(hashMap);
                 kafkaMessageService.sendMessageToChannel(messageSendDTO);
             }
 

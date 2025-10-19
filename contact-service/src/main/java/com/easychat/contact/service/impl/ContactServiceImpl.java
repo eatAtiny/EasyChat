@@ -149,7 +149,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
                         .setContactType(ContactTypeEnum.USER.getStatus())
                         .setStatus(ContactStatusEnum.FRIEND.getStatus()));
          // 2. 添加会话，调用远程方法
-         String sessionId = Constants.ROBOT_ID + UserContext.getUser();
+         String sessionId = Constants.ROBOT_ID + Userid;
          ChatSession chatSession = new ChatSession();
          chatSession.setSessionId(sessionId);
          chatSession.setLastMessage("欢迎使用EasyChat");

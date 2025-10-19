@@ -69,8 +69,7 @@ public class UserInfoChangeEventListener {
                 return;
             }
 
-            log.info("Processing user info event: userId={}, eventType={}", event.getUserId(), event.getEventType());
-            
+            log.info("收到用户信息变更事件: userId={}, eventType={}", event.getUserId(), event.getEventType());
             // 处理不同类型的事件
             switch (event.getEventType()) {
                 case CREATE:
@@ -117,7 +116,7 @@ public class UserInfoChangeEventListener {
         contact.setLastUpdateTime(DateTime.now());
         contactMapper.insert(contact);
 
-        String sessionId = Constants.ROBOT_ID + UserContext.getUser();
+        String sessionId = Constants.ROBOT_ID + contactUserInfo.getUserId();
         // 创建会话
         ChatSession chatSession = new ChatSession();
         chatSession.setSessionId(sessionId);

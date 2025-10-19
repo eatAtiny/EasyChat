@@ -22,10 +22,19 @@ public class ContactController extends BaseController {
     private ContactService contactService;
 
     /**
+     * 根路径默认处理方法
+     * 处理GET请求到/contact
+     */
+    @GetMapping
+    public ResponseVO defaultContactEndpoint() {
+        return getSuccessResponseVO("Contact API is working");
+    }
+
+    /**
      * 获取联系人列表
      */
     @ApiOperation("根据联系人类型获取联系人列表")
-    @GetMapping("/{contactType}")
+    @GetMapping("/list/{contactType}")
     public ResponseVO loadContact(@PathVariable("contactType") String contactType) {
         List<Contact> contacts = contactService.getContactList(contactType);
         return getSuccessResponseVO(contacts);
@@ -36,8 +45,8 @@ public class ContactController extends BaseController {
      * @param contactId 对方id
      * @return 关系信息DTO
      */
-    @GetMapping("")
-    public ContactDTO getContactInfo(@RequestParam("contactId") String contactId) {
+    @GetMapping("/info/{contactId}")
+    public ContactDTO getContactInfo(@PathVariable("contactId") String contactId) {
         Contact contact = contactService.getBaseMapper().selectOne(
                 new LambdaQueryWrapper<Contact>()
                         .eq(Contact::getUserId, UserContext.getUser())
