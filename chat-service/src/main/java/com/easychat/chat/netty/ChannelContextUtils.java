@@ -233,7 +233,7 @@ public class ChannelContextUtils {
     }
 
 
-    private static void sendMsg(MessageSendDTO messageSendDTO, String reciveId) {
+    private void sendMsg(MessageSendDTO messageSendDTO, String reciveId) {
         if (reciveId == null) {
             return;
         }
@@ -241,30 +241,31 @@ public class ChannelContextUtils {
         if (sendChannel == null) {
             return;
         }
-        //相当于客户而言，联系人就是发送人，所以这里转换一下再发送,好友打招呼信息发送给自己需要特殊处理
-//        if (MessageTypeEnum.ADD_FRIEND_SELF.getType().equals(messageSendDTO.getMessageType())) {
-//            Object extendData = messageSendDTO.getExtendData();
-//            String userId = null;
-//            String nickName = null;
-//
-//            if (extendData instanceof LinkedHashMap) {
-//                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) extendData;
-//                userId = (String) map.get("userId");
-//                nickName = (String) map.get("nickName");
-//            }
-//            if (userId != null && nickName != null) {
-//                messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
-//                messageSendDTO.setContactId(userId);
-//                messageSendDTO.setContactName(nickName);
-//                messageSendDTO.setExtendData(null);
-//            } else {
-//                log.warn("无法从extendData中提取userId和nickName: {}", extendData);
-//                return;
-//            }
-//        } else {
-//            messageSendDTO.setContactId(messageSendDTO.getSendUserId());
-//            messageSendDTO.setContactName(messageSendDTO.getSendUserNickName());
-//        }
+//        相当于客户而言，联系人就是发送人，所以这里转换一下再发送,好友打招呼信息发送给自己需要特殊处理
+        if (MessageTypeEnum.ADD_FRIEND_SELF.getType().equals(messageSendDTO.getMessageType())) {
+            Object extendData = messageSendDTO.getExtendData();
+            String userId = null;
+            String nickName = null;
+
+            if (extendData instanceof LinkedHashMap) {
+                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) extendData;
+                userId = (String) map.get("userId");
+                nickName = (String) map.get("nickName");
+            }
+            if (userId != null && nickName != null) {
+                messageSendDTO.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+                messageSendDTO.setContactId(userId);
+                messageSendDTO.setContactName(nickName);
+                messageSendDTO.setExtendData(null);
+            } else {
+                log.warn("无法从extendData中提取userId和nickName: {}", extendData);
+                return;
+            }
+        } else {
+            messageSendDTO.setContactId(messageSendDTO.getSendUserId());
+            messageSendDTO.setContactName(messageSendDTO.getSendUserNickName());
+        }
+        log.info("发送消息给用户{}: {}", reciveId, messageSendDTO);
         sendChannel.writeAndFlush(new TextWebSocketFrame(JsonUtils.convertObj2Json(messageSendDTO)));
     }
 
