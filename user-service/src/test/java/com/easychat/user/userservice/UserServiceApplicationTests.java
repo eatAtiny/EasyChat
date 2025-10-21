@@ -1,7 +1,5 @@
 package com.easychat.user.userservice;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.easychat.user.userservice.entity.po.UserInfo;
 import com.easychat.user.userservice.mapper.UserInfoMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +13,5 @@ class UserServiceApplicationTests {
 
     @Test
     void contextLoads() {
-    }
-
-    @Test
-    void testMybatisPlusGet() {
-        UserInfo userInfo = userInfoMapper.selectOne(new LambdaQueryWrapper<UserInfo>().eq(UserInfo::getEmail, "1234567@qq.com"));
-        System.out.println(userInfo);
     }
 }
