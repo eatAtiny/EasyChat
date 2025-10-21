@@ -18,6 +18,11 @@ spring:
     bootstrap-servers: 172.23.80.100:9094
     consumer:
       group-id: chat-service-group
+  # 文件上传
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
 redisson:
   address: "redis://172.23.80.100:6379"
 
@@ -44,11 +49,11 @@ user-service:
   admin-emails: admin666@qq.com
 
 easychat:
-  avatar:
-    path: avatar
-    suffix: .jpg
-    cover_path: avatar/cover
-    cover_suffix: _cover.jpg
+  file:
+    file-path: file
+    avatar-folder: avatar
+    message-folder: message
+    update-folder: update
 
 dubbo:
   application:

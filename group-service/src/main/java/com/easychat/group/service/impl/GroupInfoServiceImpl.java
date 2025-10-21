@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.api.ContactDubboService;
 import com.easychat.common.api.SessionDubboService;
-import com.easychat.common.config.AvatarConfig;
+import com.easychat.common.config.FileConfig;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.MessageSendDTO;
 import com.easychat.common.entity.enums.MessageStatusEnum;
 import com.easychat.common.entity.enums.MessageTypeEnum;
@@ -18,7 +19,6 @@ import com.easychat.common.utils.CopyTools;
 import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.StringTools;
 import com.easychat.common.utils.UserContext;
-import com.easychat.group.constant.Constants;
 import com.easychat.common.entity.dto.GroupInfoDTO;
 import com.easychat.common.entity.dto.GroupManageDTO;
 import com.easychat.common.entity.dto.ContactDTO;
@@ -31,7 +31,6 @@ import com.easychat.group.service.GroupInfoService;
 import com.easychat.group.kafka.KafkaMessageService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,7 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 @Service
 public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo> implements GroupInfoService {
@@ -49,7 +47,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
     private KafkaMessageService kafkaMessageService;
 
     @Autowired
-    private AvatarConfig avatarConfig;
+    private FileConfig fileConfig;
     @Autowired
     private RedisComponet redisComponet;
 
@@ -184,8 +182,8 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
             String projectPath = System.getProperty("user.dir");
 
             // 构建完整的文件夹路径
-            String avatarPath = projectPath + File.separator + avatarConfig.getPath();
-            String avatarCoverPath = projectPath + File.separator + avatarConfig.getCoverPath();
+            String avatarPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder();
+            String avatarCoverPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder() + File.separator + "cover";
 
             try {
                 File avatarDir = new File(avatarPath);
@@ -200,9 +198,9 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
                 }
 
                 // 3.1.1 头像
-                groupInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + groupInfoDTO.getGroupId() + avatarConfig.getSuffix()));
+                groupInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + groupInfoDTO.getGroupId() + Constants.IMAGE_SUFFIX));
                 // 3.1.2 群封面
-                groupInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + groupInfoDTO.getGroupId() + avatarConfig.getCoverSuffix()));
+                groupInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + groupInfoDTO.getGroupId() + Constants.COVER_IMAGE_SUFFIX));
 
             } catch (IOException e) {
                 // 添加详细错误日志

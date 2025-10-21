@@ -1,11 +1,11 @@
 package com.easychat.user.userservice.service.impl;
 
 import cn.hutool.core.date.DateTime;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.api.ContactDubboService;
-import com.easychat.common.config.AvatarConfig;
+import com.easychat.common.config.FileConfig;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.exception.BusinessException;
 
 import com.easychat.common.utils.RedisComponet;
@@ -14,7 +14,6 @@ import com.easychat.common.entity.dto.TokenUserInfoDTO;
 import com.easychat.common.entity.kafka.UserInfoMessage;
 import com.easychat.common.utils.UserContext;
 import com.easychat.user.userservice.config.UserServiceConfig;
-import com.easychat.user.userservice.constant.Constants;
 import com.easychat.common.entity.dto.ContactDTO;
 import com.easychat.common.entity.dto.UserFormDTO;
 import com.easychat.common.entity.dto.UserInfoDTO;
@@ -30,7 +29,6 @@ import com.easychat.user.userservice.mapper.UserInfoMapper;
 import com.easychat.user.userservice.service.UserInfoService;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.jboss.marshalling.TraceInformation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -64,7 +62,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     private KafkaMessageService kafkaMessageService;
 
     @Autowired
-    private AvatarConfig avatarConfig;
+    private FileConfig fileConfig;
 
     /**
      * 注册用户
@@ -244,8 +242,10 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             String projectPath = System.getProperty("user.dir");
 
             // 构建完整的文件夹路径
-            String avatarPath = projectPath + File.separator + avatarConfig.getPath();
-            String avatarCoverPath = projectPath + File.separator + avatarConfig.getCoverPath();
+            String avatarPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder();
+            String avatarCoverPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder() + File.separator + "cover";
+
+
 
             try {
                 File avatarDir = new File(avatarPath);
@@ -260,9 +260,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
                 }
 
                 // 3.1.1 头像
-                userInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + userInfoDTO.getUserId() + avatarConfig.getSuffix()));
+                userInfoDTO.getAvatarFile().transferTo(new File(avatarPath + File.separator + userInfoDTO.getUserId() + Constants.IMAGE_SUFFIX));
                 // 3.1.2 群封面
-                userInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + userInfoDTO.getUserId() + avatarConfig.getCoverSuffix()));
+                userInfoDTO.getAvatarCover().transferTo(new File(avatarCoverPath + File.separator + userInfoDTO.getUserId() + Constants.COVER_IMAGE_SUFFIX));
 
             } catch (IOException e) {
                 // 添加详细错误日志

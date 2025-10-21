@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.api.AdminDubboService;
-import com.easychat.common.config.AvatarConfig;
+import com.easychat.common.config.FileConfig;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.SysSettingDTO;
 import com.easychat.common.entity.po.AppUpdate;
 import com.easychat.common.entity.vo.PageResultVO;
@@ -15,7 +16,6 @@ import com.easychat.common.utils.RedisComponet;
 import com.easychat.common.utils.RedisUtils;
 
 import com.easychat.common.utils.UserContext;
-import com.easychat.user.userservice.constant.Constants;
 import com.easychat.common.entity.dto.UserFormDTO;
 import com.easychat.common.entity.dto.UserInfoBeautyDTO;
 import com.easychat.common.entity.dto.UserInfoDTO;
@@ -33,7 +33,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.apache.tomcat.jni.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -66,7 +65,7 @@ public class UserController extends BaseController {
     private UserInfoBeautyMapper userInfoBeautyMapper;
 
     @Autowired
-    private AvatarConfig avatarConfig;
+    private FileConfig fileConfig;
 
     @DubboReference(check = false)
     private AdminDubboService  adminDubboService;
@@ -278,11 +277,11 @@ public class UserController extends BaseController {
         // 获取当前项目根目录
         String projectPath = System.getProperty("user.dir");
         // 构建完整的文件夹路径
-        String filePath = projectPath + File.separator + avatarConfig.getFilePath();
-        File file = new File(filePath + File.separator + updateVO.getVersion() + avatarConfig.getFileSuffix());
+        String filePath = projectPath + File.separator + fileConfig.getFilePath();
+        File file = new File(filePath + File.separator + updateVO.getVersion() + Constants.APP_EXE_SUFFIX);
         updateVO.setSize(file.length());
         updateVO.setUpdateList(Arrays.asList(appUpdate.getUpdateDescArray()));
-        String fileName = updateVO.getVersion() + avatarConfig.getFileSuffix();
+        String fileName = updateVO.getVersion() + Constants.APP_EXE_SUFFIX;
         updateVO.setFileName(fileName);
         return getSuccessResponseVO(appUpdate);
      }

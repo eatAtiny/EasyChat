@@ -48,13 +48,11 @@ mybatis-plus:
 server:
   port: 8084
 easychat:
-  avatar:
-    path: avatar
-    suffix: .jpg
-    cover_path: avatar/cover
-    cover_suffix: _cover.jpg
-    file_path: file
-    file_suffix: .exe
+  file:
+    file-path: file
+    avatar-folder: avatar
+    message-folder: message
+    update-folder: update
 
 dubbo:
   application:

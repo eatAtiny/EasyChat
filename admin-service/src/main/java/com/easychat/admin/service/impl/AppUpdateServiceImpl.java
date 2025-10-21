@@ -3,14 +3,14 @@ package com.easychat.admin.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.easychat.common.config.FileConfig;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.AppUpdateDTO;
 import com.easychat.common.entity.enums.AppUpdateFileTypeEnum;
 import com.easychat.common.entity.enums.AppUpdateStatusEnum;
 import com.easychat.admin.mapper.AppUpdateMapper;
 import com.easychat.admin.service.AppUpdateService;
-import com.easychat.common.config.AvatarConfig;
 import com.easychat.common.entity.po.AppUpdate;
 import com.easychat.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ import java.util.Objects;
 public class AppUpdateServiceImpl extends ServiceImpl<AppUpdateMapper, AppUpdate> implements AppUpdateService {
 
     @Autowired
-    private AvatarConfig avatarConfig;
+    private FileConfig fileConfig;
 
     /**
      * 保存更新
@@ -55,7 +55,7 @@ public class AppUpdateServiceImpl extends ServiceImpl<AppUpdateMapper, AppUpdate
             String projectPath = System.getProperty("user.dir");
 
             // 构建完整的文件夹路径
-            String filePath = projectPath + File.separator + avatarConfig.getFilePath();
+            String filePath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getUpdateFolder();
 
             try {
                 File avatarDir = new File(filePath);
@@ -63,9 +63,7 @@ public class AppUpdateServiceImpl extends ServiceImpl<AppUpdateMapper, AppUpdate
                 if (!avatarDir.exists()) {
                     avatarDir.mkdirs(); // 递归创建文件夹
                 }
-
-                // 3.1.1 头像
-                appUpdateDTO.getFile().transferTo(new File(filePath + File.separator + appUpdateDTO.getVersion() + avatarConfig.getFileSuffix()));
+                appUpdateDTO.getFile().transferTo(new File(filePath + File.separator + appUpdateDTO.getVersion() + Constants.APP_EXE_SUFFIX));
             } catch (IOException e) {
                 // 添加详细错误日志
                 log.error("文件保存失败");

@@ -2,11 +2,11 @@ package com.easychat.admin.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.AppUpdateDTO;
 import com.easychat.admin.service.AppUpdateService;
-import com.easychat.common.config.AvatarConfig;
+import com.easychat.common.config.FileConfig;
 import com.easychat.common.entity.dto.SysSettingDTO;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.api.UserInfoDubboService;
@@ -42,7 +42,7 @@ public class AdminController extends BaseController {
     private RedisComponet redisComponet;
 
     @Autowired
-    private AvatarConfig avatarConfig;
+    private FileConfig fileConfig;
     @Autowired
     private AppUpdateService appUpdateService;
 
@@ -103,8 +103,10 @@ public class AdminController extends BaseController {
             String projectPath = System.getProperty("user.dir");
 
             // 构建完整的文件夹路径
-            String avatarPath = projectPath + File.separator + avatarConfig.getPath();
-            String avatarCoverPath = projectPath + File.separator + avatarConfig.getCoverPath();
+            String avatarPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder();
+            String avatarCoverPath = projectPath + File.separator + fileConfig.getFilePath() + File.separator + fileConfig.getAvatarFolder() + File.separator + "cover";
+
+
 
             try {
                 File avatarDir = new File(avatarPath);
@@ -119,9 +121,9 @@ public class AdminController extends BaseController {
                 }
 
                 // 3.1.1 头像
-                robotFile.transferTo(new File(avatarPath + File.separator + (sysSettingDTO.getRobotUid() == null ? "Urobot" : sysSettingDTO.getRobotUid()) + avatarConfig.getSuffix()));
+                robotFile.transferTo(new File(avatarPath + File.separator + (sysSettingDTO.getRobotUid() == null ? "Urobot" : sysSettingDTO.getRobotUid()) + Constants.IMAGE_SUFFIX));
                 // 3.1.2 群封面
-                robotCover.transferTo(new File(avatarCoverPath + File.separator + (sysSettingDTO.getRobotUid() == null ? "Urobot" : sysSettingDTO.getRobotUid()) + avatarConfig.getCoverSuffix()));
+                robotCover.transferTo(new File(avatarCoverPath + File.separator + (sysSettingDTO.getRobotUid() == null ? "Urobot" : sysSettingDTO.getRobotUid()) + Constants.COVER_IMAGE_SUFFIX));
 
             } catch (IOException e) {
                 // 添加详细错误日志

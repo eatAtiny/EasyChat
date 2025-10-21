@@ -106,4 +106,53 @@ public class Constants {
     public static final String USER_ID = "user_id"; // 用户id
     public static final String USER_NICK_NAME = "nick_name";  // 昵称
 
+    // checkCode
+    public static final Integer REDIS_KEY_CHECK_CODE_KEY_TIME = 60 * 10;
+    // 错误信息
+    public static final String ERROR_MSG_CHECK_CODE = "图片验证码错误";
+    public static final String ERROR_MSG_USER_EXIST = "用户已存在";
+    public static final String ERROR_MSG_USER_NOT_EXIST = "用户不存在";
+    public static final String ERROR_MSG_PASSWORD_ERROR = "密码错误";
+    public static final String ERROR_MSG_USER_DISABLE = "用户已禁用";
+    public static final String ERROR_MSG_USER_LOGIN = "用户已登录";
+
+    // 用户默认信息
+    public static final Integer USER_DEFAULT_JOIN_TYPE = 1; // 0:直接加入 1:同意后加好友
+    public static final Integer USER_DEFAULT_SEX = 0; // 0:女 1:男
+    public static final Integer USER_DEFAULT_STATUS = 1; // 0:禁用 1:正常
+    public static final String USER_DEFAULT_PERSONAL_SIGNATURE = "这个人很懒，没有留下什么~";
+    public static final String USER_DEFAULT_AREA_NAME = "未知";
+    public static final String USER_DEFAULT_AREA_CODE = "000000";
+
+    // 靓号
+    public static final Integer USER_BEAUTY_STATUS = 1; // 0:未使用 1:已使用
+
+    // 用户状态
+    public static final Integer USER_STATUS_DISABLE = 0; // 禁用
+    public static final Integer USER_STATUS_NORMAL = 1; // 正常
+
+
+    // 群聊默认信息
+    public static final Integer GROUP_STATUS_NORMAL = 1;
+
+    // 联系人ID正则表达式
+    public static final String CONTACT_ID_REGEX = "^[GU][0-9a-fA-F]{11}$";
+
+    // 错误信息
+    public static final String GROUP_NOT_EXIST = "群聊不存在";
+    public static final String USER_NOT_EXIST = "用户不存在";
+    public static final String GROUP_EXIST = "群聊已存在";
+    public static final String GROUP_NUM_EXCEED = "群聊数量已达上限";
+    public static final String GROUP_OWNER_ERROR = "群主信息错误";
+    public static final String USER_NOT_IN_GROUP = "用户不在群聊中";
+    public static final String GROUP_OP_TYPE_UNKNOWN = "群聊操作类型未知";
+    public static final String GROUP_OWNER_CANT_LEAVE = "群主不能退出群聊";
+    public static final String CONTACT_APPLY_INFO_ERROR = "申请信息错误";
+    public static final String CONTACT_USER_STATUS_BLOCKED = "对方已将你拉黑";
+    public static final String GROUP_FULL = "群聊已满";
+    public static final String APPLY_NOT_EXIST = "申请不存在";
+    public static final String ERROR_OPERATION = "违法操作";
+
+    // 群聊状态
+    public static final Integer GROUP_STATUS_DISSOLUTION = 0;  // 解散
 }
