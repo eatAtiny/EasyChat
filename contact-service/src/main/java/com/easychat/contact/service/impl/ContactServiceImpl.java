@@ -2,6 +2,7 @@ package com.easychat.contact.service.impl;
 
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.easychat.common.api.SessionDubboService;
 import com.easychat.common.constants.Constants;
@@ -177,5 +178,25 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
          chatMessage.setSendTime(DateTime.now().getTime());
          // 添加消息到数据库，接收返回的包含自增ID的chatMessage对象
          chatMessage = sessionDubboService.addChatMessage(chatMessage);
+     }
+
+      /**
+       * 解散群聊
+       * @param groupId 群聊ID
+       */
+     @Override
+     public void dissolutionGroup(String groupId) {
+         // 将关系标记为解散
+         baseMapper.update(new Contact(), new LambdaUpdateWrapper<Contact>()
+                        .set(Contact::getStatus, ContactStatusEnum.DEL_FRIEND.getStatus())
+                        .eq(Contact::getContactId, groupId)
+                        .eq(Contact::getContactType, ContactTypeEnum.GROUP.getStatus()));
+         // 从redis中删除
+         List<Contact> contactList = baseMapper.selectList(new LambdaQueryWrapper<Contact>()
+                        .eq(Contact::getContactId, groupId)
+                        .eq(Contact::getContactType, ContactTypeEnum.GROUP.getStatus()));
+         contactList.forEach(contact -> {
+             redisComponet.removeUserContact(contact.getUserId(), groupId);
+         });
      }
 }

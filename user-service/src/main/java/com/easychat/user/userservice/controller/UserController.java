@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.api.AdminDubboService;
+import com.easychat.common.api.SessionDubboService;
 import com.easychat.common.config.FileConfig;
 import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.SysSettingDTO;
@@ -69,6 +70,9 @@ public class UserController extends BaseController {
 
     @DubboReference(check = false)
     private AdminDubboService  adminDubboService;
+
+    @DubboReference(check = false)
+    private SessionDubboService sessionDubboService;
 
     /**
      * 验证码
@@ -191,7 +195,8 @@ public class UserController extends BaseController {
     @ApiOperation("退出登录")
     @PostMapping("/logout")
     public ResponseVO logout() {
-        // TODO 关闭ws连接
+        // 关闭ws连接
+        sessionDubboService.closeUserChannel(UserContext.getUser());
         // 清除Redis中的用户登录信息
         redisComponet.cleanUserTokenByUserId(UserContext.getUser());
         return getSuccessResponseVO(null);

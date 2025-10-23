@@ -45,4 +45,10 @@ public interface ContactDubboService {
      * @param userId 用户ID
      */
      void addRobotFriend(String userId);
+
+     /**
+     * 解散群聊
+     * @param groupId 群聊ID
+     */
+     void dissolutionGroup(String groupId);
 }

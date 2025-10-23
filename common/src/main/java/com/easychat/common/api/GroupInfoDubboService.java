@@ -16,4 +16,10 @@ public interface GroupInfoDubboService {
      * @return 群组信息
      */
     GroupInfoDTO getGroupInfo(String groupId);
+
+    /**
+     * 解散群组
+     * @param groupId 群组ID
+     */
+    void dissolutionGroup(String groupId);
 }

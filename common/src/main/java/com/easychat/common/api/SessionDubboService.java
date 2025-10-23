@@ -21,6 +21,12 @@ public interface SessionDubboService {
      */
     boolean updateSessionUser(ChatSessionUser chatSessionUser);
 
+     /**
+     * 更新会话
+     * @param chatSession 会话
+     */
+    void updateSession(ChatSession chatSession);
+
     /**
      * 添加聊天信息
      * @param chatMessage 聊天消息对象
@@ -32,4 +38,9 @@ public interface SessionDubboService {
      * 将用户添加进channelGroup
      */
     void addGroupToChannel(String userId, String groupId);
+
+    /**
+     * 关闭用户通道
+     */
+    void closeUserChannel(String userId);
 }

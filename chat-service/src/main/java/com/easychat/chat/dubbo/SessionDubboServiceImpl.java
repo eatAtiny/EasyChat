@@ -66,6 +66,18 @@ public class SessionDubboServiceImpl implements SessionDubboService {
     }
 
     /**
+     * 更新会话
+     * @param chatSession 会话
+     */
+    @Override
+    public void updateSession(ChatSession chatSession) {
+        // 按sessionId条件更新
+        QueryWrapper<ChatSession> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("session_id", chatSession.getSessionId());
+        chatSessionService.update(chatSession, queryWrapper);
+    }
+
+    /**
      * 添加聊天信息
      */
      @Override
@@ -80,5 +92,13 @@ public class SessionDubboServiceImpl implements SessionDubboService {
     @Override
     public void addGroupToChannel(String userId, String groupId){
         channelContextUtils.addUserToGroup(userId, groupId);
+    }
+
+    /**
+     * 关闭用户通道
+     */
+    @Override
+    public void closeUserChannel(String userId){
+        channelContextUtils.closeContext(userId);
     }
 }

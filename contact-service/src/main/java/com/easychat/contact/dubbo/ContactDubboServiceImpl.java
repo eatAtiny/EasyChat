@@ -100,4 +100,9 @@ public class ContactDubboServiceImpl implements ContactDubboService {
     public void addRobotFriend(String userId) {
         contactService.addRobotFriend(userId);
     }
+
+     @Override
+     public void dissolutionGroup(String groupId) {
+        contactService.dissolutionGroup(groupId);
+     }
 }
