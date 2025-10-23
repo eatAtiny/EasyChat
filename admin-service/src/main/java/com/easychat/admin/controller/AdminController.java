@@ -3,13 +3,18 @@ package com.easychat.admin.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.easychat.admin.kafka.KafkaMessageService;
+import com.easychat.common.api.GroupInfoDubboService;
 import com.easychat.common.constants.Constants;
 import com.easychat.common.entity.dto.AppUpdateDTO;
 import com.easychat.admin.service.AppUpdateService;
 import com.easychat.common.config.FileConfig;
+import com.easychat.common.entity.dto.MessageSendDTO;
 import com.easychat.common.entity.dto.SysSettingDTO;
 import com.easychat.common.advice.BaseController;
 import com.easychat.common.api.UserInfoDubboService;
+import com.easychat.common.entity.enums.ContactTypeEnum;
+import com.easychat.common.entity.enums.MessageTypeEnum;
 import com.easychat.common.entity.po.AppUpdate;
 import com.easychat.common.entity.vo.PageResultVO;
 import com.easychat.common.entity.vo.ResponseVO;
@@ -38,6 +43,9 @@ public class AdminController extends BaseController {
     @DubboReference(check = false)
     private UserInfoDubboService userInfoDubboService;
 
+    @DubboReference(check = false)
+    private GroupInfoDubboService groupInfoDubboService;
+
     @Autowired
     private RedisComponet redisComponet;
 
@@ -45,6 +53,8 @@ public class AdminController extends BaseController {
     private FileConfig fileConfig;
     @Autowired
     private AppUpdateService appUpdateService;
+    @Autowired
+    private KafkaMessageService kafkaMessageService;
 
     /**
      * 禁用/启用用户
@@ -65,8 +75,12 @@ public class AdminController extends BaseController {
     @ApiOperation("强制下线用户")
     @PostMapping("/user/off")
     public ResponseVO forceLogoutUser(@RequestParam("userId") String userId) {
-        // TODO 发送下线消息
-        return getServerErrorResponseVO("暂未实现");
+        MessageSendDTO sendDTO = new MessageSendDTO();
+        sendDTO.setContactType(ContactTypeEnum.USER.getStatus());
+        sendDTO.setMessageType(MessageTypeEnum.FORCE_OFF_LINE.getType());
+        sendDTO.setContactId(userId);
+        kafkaMessageService.sendWsMessage(sendDTO);
+        return getSuccessResponseVO(null);
     }
 
     /**
@@ -75,8 +89,9 @@ public class AdminController extends BaseController {
     @ApiOperation("解散群组")
     @PostMapping("/group")
     public ResponseVO dismissGroup(@RequestParam("groupId") String groupId) {
-        // TODO 调用群组接口
-        return getServerErrorResponseVO("暂未实现");
+        // 1. 调用群组接口解散群组
+        groupInfoDubboService.dissolutionGroup(groupId);
+        return getSuccessResponseVO("解散成功");
     }
 
     /**

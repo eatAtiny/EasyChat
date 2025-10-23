@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 
 @Service
 public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo> implements GroupInfoService {
@@ -312,7 +313,7 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         if (groupInfo == null) {
             throw new BusinessException(Constants.GROUP_NOT_EXIST);
         }
-        // 2. 判断用户是否为群聊群主
+        // 2. 判断用户是否为群聊群主或管理员
         if (!StringUtils.equals(groupInfo.getGroupOwnerId(), UserContext.getUser())) {
             throw new BusinessException(Constants.GROUP_OWNER_ERROR);
         }
@@ -320,9 +321,32 @@ public class GroupInfoServiceImpl extends ServiceImpl<GroupInfoMapper, GroupInfo
         groupInfo.setStatus(Constants.GROUP_STATUS_DISSOLUTION);
         baseMapper.updateById(groupInfo);
 
-        // 4. TODO 删除群聊成员
-        // 5. TODO 删除会话
-        // 6. TODO 通知成员解散
+        // 4. 调用contact-service删除群聊成员关系
+        contactDubboService.dissolutionGroup(groupId);
+
+        // 5. 更新会话
+        String sessionId = StringTools.getChatSessionId4Group(groupId);
+        Date curTime = new Date();
+        String messageContent = MessageTypeEnum.DISSOLUTION_GROUP.getInitMessage();
+        //更新会话消息
+        ChatSession chatSession = new ChatSession();
+        chatSession.setLastMessage(messageContent);
+        chatSession.setLastReceiveTime(curTime.getTime());
+        sessionDubboService.updateSession(chatSession);
+        //记录消息消息表
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(sessionId);
+        chatMessage.setSendTime(curTime.getTime());
+        chatMessage.setContactType(ContactTypeEnum.GROUP.getStatus());
+        chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus());
+        chatMessage.setMessageType(MessageTypeEnum.DISSOLUTION_GROUP.getType());
+        chatMessage.setContactId(groupId);
+        chatMessage.setMessageContent(messageContent);
+        sessionDubboService.addChatMessage(chatMessage);
+        //发送解散群消息
+        MessageSendDTO messageSendDTO = CopyTools.copy(chatMessage, MessageSendDTO.class);
+        kafkaMessageService.sendWsMessage(messageSendDTO);
+
     }
 
     /**

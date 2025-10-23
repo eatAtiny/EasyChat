@@ -100,8 +100,8 @@ public class GroupController extends BaseController {
      */
     @DeleteMapping("/{groupId}")
     public ResponseVO dissolutionGroup(@NotNull @PathVariable("groupId") String groupId) {
-//      TODO  1.设置群聊状态为解散 2.修改所有群成员状态为退出
-        return getSuccessResponseVO(null);
+        groupInfoService.dissolutionGroup(groupId);
+        return getSuccessResponseVO("解散成功");
     }
 
     /**
